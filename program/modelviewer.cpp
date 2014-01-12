@@ -657,6 +657,8 @@ static void init_mesh(const std::string& path)
 
       if (mode_engine == MODE_SCENEWALKER)
       {
+         meshes[i]->set_scenewalker_default_lighting();
+
          const std::vector<GL::Vertex>& vertices = *meshes[i]->get_vertex();
          for (unsigned v = 0; v < vertices.size(); v += 3)
          {

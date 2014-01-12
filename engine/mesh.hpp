@@ -80,6 +80,7 @@ namespace GL
 
          void set_light_pos(const glm::vec3& light_pos);
          void set_light_ambient(const glm::vec3& light_ambient);
+         void set_scenewalker_default_lighting();
 
          void render();
 

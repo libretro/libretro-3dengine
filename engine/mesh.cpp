@@ -44,6 +44,11 @@ namespace GL
       SYM(glDeleteBuffers)(1, &vbo);
    }
 
+   void Mesh::set_scenewalker_default_lighting()
+   {
+      light_pos = vec3(0, 10, 0);
+   }
+
    void Mesh::set_vertices(vector<Vertex> vertex)
    {
       set_vertices(std1::shared_ptr<vector<Vertex> >(new vector<Vertex>(vertex)));
