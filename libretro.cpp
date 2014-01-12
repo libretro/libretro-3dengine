@@ -33,7 +33,6 @@
 #include "glm/glm.hpp"
 #include "glm/gtc/matrix_transform.hpp"
 
-#define ARRAY_SIZE(a) (sizeof(a) / sizeof((a)[0]))
 static struct retro_hw_render_callback hw_render;
 static struct retro_camera_callback camera_cb;
 retro_log_printf_t log_cb;
@@ -41,8 +40,8 @@ static retro_video_refresh_t video_cb;
 static retro_audio_sample_t audio_cb;
 static retro_audio_sample_batch_t audio_batch_cb;
 retro_environment_t environ_cb;
-static retro_input_poll_t input_poll_cb;
-static retro_input_state_t input_state_cb;
+retro_input_poll_t input_poll_cb;
+retro_input_state_t input_state_cb;
 
 using namespace glm;
 
@@ -59,105 +58,8 @@ using namespace glm;
 static unsigned width = BASE_WIDTH;
 static unsigned height = BASE_HEIGHT;
 
-
-GLuint prog;
-static GLuint tex;
-static GLuint g_texture_target = GL_TEXTURE_2D;
-
-static vec3 player_pos;
-
-static float camera_rot_x;
-static float camera_rot_y;
-
-static const char *vertex_shader[] = {
-   "uniform mat4 uVP;",
-   "uniform mat4 uM;",
-   "attribute vec4 aVertex;",
-   "attribute vec4 aNormal;",
-   "attribute vec2 aTexCoord;",
-   "varying vec3 normal;",
-   "varying vec4 model_pos;",
-   "varying vec2 tex_coord;",
-   "void main() {",
-   "  model_pos = uM * aVertex;",
-   "  gl_Position = uVP * model_pos;",
-   "  vec4 trans_normal = uM * aNormal;",
-   "  normal = trans_normal.xyz;",
-   "  tex_coord = vec2(1.0 - aTexCoord.x, aTexCoord.y);",
-   "}",
-};
-
-static const char *fragment_shader[] = {
-#ifdef ANDROID
-   "#extension GL_OES_EGL_image_external : require\n"
-#endif
-#ifdef GLES
-   "precision mediump float; \n",
-#endif
-   "varying vec3 normal;",
-   "varying vec4 model_pos;",
-   "varying vec2 tex_coord;",
-   "uniform vec3 light_pos;",
-   "uniform vec4 ambient_light;",
-#ifdef ANDROID
-   "uniform samplerExternalOES uTexture;",
-#else
-   "uniform sampler2D uTexture;",
-#endif
-
-   "void main() {",
-   "  vec3 diff = light_pos - model_pos.xyz;",
-   "  float dist_mod = 100.0 * inversesqrt(dot(diff, diff));",
-   "  gl_FragColor = texture2D(uTexture, tex_coord) * (ambient_light + dist_mod * smoothstep(0.0, 1.0, dot(normalize(diff), normal)));",
-   "}",
-};
-
-static void print_shader_log(GLuint shader)
-{
-   GLsizei len = 0;
-   SYM(glGetShaderiv)(shader, GL_INFO_LOG_LENGTH, &len);
-   if (!len)
-      return;
-
-   char *buffer = new char[len];
-   SYM(glGetShaderInfoLog)(shader, len, &len, buffer);
-   log_cb(RETRO_LOG_INFO, ":%s\n", buffer);
-   delete[] buffer;
-}
-
-static void compile_program(void)
-{
-   prog = SYM(glCreateProgram)();
-   GLuint vert = SYM(glCreateShader)(GL_VERTEX_SHADER);
-   GLuint frag = SYM(glCreateShader)(GL_FRAGMENT_SHADER);
-
-   SYM(glShaderSource)(vert, ARRAY_SIZE(vertex_shader), vertex_shader, 0);
-   SYM(glShaderSource)(frag, ARRAY_SIZE(fragment_shader), fragment_shader, 0);
-   SYM(glCompileShader)(vert);
-   SYM(glCompileShader)(frag);
-
-   int status = 0;
-   SYM(glGetShaderiv)(vert, GL_COMPILE_STATUS, &status);
-   if (!status && log_cb)
-   {
-      log_cb(RETRO_LOG_ERROR, "Vertex shader failed to compile!\n");
-      print_shader_log(vert);
-   }
-   SYM(glGetShaderiv)(frag, GL_COMPILE_STATUS, &status);
-   if (!status && log_cb)
-   {
-      log_cb(RETRO_LOG_ERROR, "Fragment shader failed to compile!\n");
-      print_shader_log(frag);
-   }
-
-   SYM(glAttachShader)(prog, vert);
-   SYM(glAttachShader)(prog, frag);
-   SYM(glLinkProgram)(prog);
-
-   SYM(glGetProgramiv)(prog, GL_LINK_STATUS, &status);
-   if (!status && log_cb)
-      log_cb(RETRO_LOG_ERROR, "Program failed to link!\n");
-}
+GLuint tex;
+GLuint g_texture_target = GL_TEXTURE_2D;
 
 void retro_init(void)
 {
@@ -209,20 +111,20 @@ void retro_set_environment(retro_environment_t cb)
    environ_cb = cb;
 
    struct retro_variable variables[] = {
-      { "resolution",
+      { "3dengine-resolution",
 #ifdef GLES
          "Internal resolution; 800x600|320x240|360x480|480x272|512x384|512x512|640x240|640x448|640x480|720x576|800x600|960x720|1024x768" },
 #else
       "Internal resolution; 320x240|360x480|480x272|512x384|512x512|640x240|640x448|640x480|720x576|800x600|960x720|1024x768|1024x1024|1280x720|1280x960|1600x1200|1920x1080|1920x1440|1920x1600" },
 #endif
                         {
-         "cube_size",
+         "3dengine-cube-size",
          "Cube size; 4|1|2|4|8|16|32|64|128" },
                         {
-         "cube_stride",
+         "3dengine-cube-stride",
          "Cube stride; 3.0|2.0|3.0|4.0|5.0|6.0|7.0|8.0" },
                         {
-         "camera-type",
+         "3dengine-camera-type",
          "Camera FB Type; texture|raw framebuffer" },
       { NULL, NULL },
    };
@@ -262,56 +164,14 @@ void context_reset(void)
 
    GL::set_function_cb(hw_render.get_proc_address);
    GL::init_symbol_map();
-   compile_program();
-   program_context_reset();
-   tex = 0;
+   program_compile_shaders();
 }
-
-static vec3 check_input(void)
-{
-   static unsigned select_timeout = 0;
-   input_poll_cb();
-
-   int x = input_state_cb(0, RETRO_DEVICE_MOUSE, 0, RETRO_DEVICE_ID_MOUSE_X);
-   int y = input_state_cb(0, RETRO_DEVICE_MOUSE, 0, RETRO_DEVICE_ID_MOUSE_Y);
-   x = std::max(std::min(x, 20), -20);
-   y = std::max(std::min(y, 20), -20);
-   camera_rot_x -= 0.20 * x;
-   camera_rot_y -= 0.10 * y;
-
-   camera_rot_y = std::max(std::min(camera_rot_y, 80.0f), -80.0f);
-
-   mat4 look_rot_x = rotate(mat4(1.0), camera_rot_x, vec3(0, 1, 0));
-   mat4 look_rot_y = rotate(mat4(1.0), camera_rot_y, vec3(1, 0, 0));
-   vec3 look_dir = vec3(look_rot_x * look_rot_y * vec4(0, 0, -1, 0));
-
-   vec3 look_dir_side = vec3(look_rot_x * vec4(1, 0, 0, 0));
-
-   mat3 s = mat3(scale(mat4(1.0), vec3(0.25, 0.25, 0.25)));
-   if (input_state_cb(0, RETRO_DEVICE_JOYPAD, 0, RETRO_DEVICE_ID_JOYPAD_UP))
-      player_pos += s * look_dir;
-   if (input_state_cb(0, RETRO_DEVICE_JOYPAD, 0, RETRO_DEVICE_ID_JOYPAD_DOWN))
-      player_pos -= s * look_dir;
-
-   if (input_state_cb(0, RETRO_DEVICE_JOYPAD, 0, RETRO_DEVICE_ID_JOYPAD_LEFT))
-      player_pos -= s * look_dir_side;
-   if (input_state_cb(0, RETRO_DEVICE_JOYPAD, 0, RETRO_DEVICE_ID_JOYPAD_RIGHT))
-      player_pos += s * look_dir_side;
-   else if (select_timeout != 0)
-      select_timeout--;
-
-   program_check_input(look_rot_x, look_rot_y, look_dir, look_dir_side, player_pos);
-
-   return look_dir;
-}
-
-
 
 static void update_variables(void)
 {
    struct retro_variable var;
 
-   var.key = "resolution";
+   var.key = "3dengine-resolution";
    var.value = NULL;
 
    if (environ_cb(RETRO_ENVIRONMENT_GET_VARIABLE, &var) && var.value)
@@ -340,46 +200,12 @@ void retro_run(void)
    if (environ_cb(RETRO_ENVIRONMENT_GET_VARIABLE_UPDATE, &updated) && updated)
       update_variables();
 
-   vec3 look_dir = check_input();
-
    SYM(glBindFramebuffer)(GL_FRAMEBUFFER, hw_render.get_current_framebuffer());
    SYM(glClearColor)(0.1, 0.1, 0.1, 1.0);
    SYM(glViewport)(0, 0, width, height);
    SYM(glClear)(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-   SYM(glUseProgram)(prog);
-
-   SYM(glEnable)(GL_DEPTH_TEST);
-   SYM(glEnable)(GL_CULL_FACE);
-
-   int tloc = SYM(glGetUniformLocation)(prog, "uTexture");
-   SYM(glUniform1i)(tloc, 0);
-   SYM(glActiveTexture)(GL_TEXTURE0);
-
-   SYM(glBindTexture)(g_texture_target, tex);
-
-   int lloc = SYM(glGetUniformLocation)(prog, "light_pos");
-   vec3 light_pos(0, 150, 15);
-   SYM(glUniform3fv)(lloc, 1, &light_pos[0]);
-
-   vec4 ambient_light(0.2, 0.2, 0.2, 1.0);
-   lloc = SYM(glGetUniformLocation)(prog, "ambient_light");
-   SYM(glUniform4fv)(lloc, 1, &ambient_light[0]);
-
-   int vploc = SYM(glGetUniformLocation)(prog, "uVP");
-   mat4 view = lookAt(player_pos, player_pos + look_dir, vec3(0, 1, 0));
-   mat4 proj = scale(mat4(1.0), vec3(1, -1, 1)) * perspective(45.0f, 640.0f / 480.0f, 5.0f, 500.0f);
-   mat4 vp = proj * view;
-   SYM(glUniformMatrix4fv)(vploc, 1, GL_FALSE, &vp[0][0]);
-
-   int modelloc = SYM(glGetUniformLocation)(prog, "uM");
-   mat4 model = mat4(1.0);
-   SYM(glUniformMatrix4fv)(modelloc, 1, GL_FALSE, &model[0][0]);
-
    program_run();
-
-   SYM(glUseProgram)(0);
-   SYM(glBindTexture)(g_texture_target, 0);
 
    video_cb(RETRO_HW_FRAME_BUFFER_VALID, width, height, 0);
 }
@@ -506,7 +332,7 @@ bool retro_load_game(const struct retro_game_info *info)
       return false;
    }
 
-   struct retro_variable camvar = { "camera-type" };
+   struct retro_variable camvar = { "3dengine-camera-type" };
    if (environ_cb(RETRO_ENVIRONMENT_GET_VARIABLE, &camvar) && camvar.value)
    {
       if (!strcmp(camvar.value, "texture"))
@@ -553,7 +379,6 @@ bool retro_load_game(const struct retro_game_info *info)
 
    if (log_cb)
       log_cb(RETRO_LOG_INFO, "Loaded game!\n");
-   player_pos = vec3(0, 0, 0);
 
    program_load_game(info);
 
