@@ -1,5 +1,5 @@
 /*  RetroArch - A frontend for libretro.
- *  Copyright (C) 2010-2014 - Hans-Kristian Arntzen
+ *  Copyright (C) 2010-2013 - Hans-Kristian Arntzen
  * 
  *  RetroArch is free software: you can redistribute it and/or modify it under the terms
  *  of the GNU General Public License as published by the Free Software Found-
@@ -17,27 +17,17 @@
 #define RPNG_H__
 
 #include <stdint.h>
+#include "shared.hpp"
 
-#ifndef __cplusplus
-#include <stdbool.h>
-#endif
-
-#ifdef HAVE_CONFIG_H
-#include "../../config.h"
-#endif
+// Modified version of RetroArch's PNG loader.
+// Uses bottom-left origin rather than top-left.
+// Also outputs RGBA byte order to work on GLES without extensions (GL_RGBA, GL_UNSIGNED_BYTE).
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-bool rpng_load_image_argb(const char *path, uint32_t **data, unsigned *width, unsigned *height);
-
-#ifdef HAVE_ZLIB_DEFLATE
-bool rpng_save_image_argb(const char *path, const uint32_t *data,
-      unsigned width, unsigned height, unsigned pitch);
-bool rpng_save_image_bgr24(const char *path, const uint8_t *data,
-      unsigned width, unsigned height, unsigned pitch);
-#endif
+bool rpng_load_image_rgba(const char *path, uint8_t **data, unsigned *width, unsigned *height);
 
 #ifdef __cplusplus
 }
