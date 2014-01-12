@@ -43,8 +43,6 @@ retro_environment_t environ_cb;
 retro_input_poll_t input_poll_cb;
 retro_input_state_t input_state_cb;
 
-using namespace glm;
-
 #define BASE_WIDTH 320
 #define BASE_HEIGHT 240
 #ifdef GLES
@@ -437,7 +435,9 @@ size_t retro_get_memory_size(unsigned id)
 }
 
 void retro_reset(void)
-{}
+{
+   program_context_reset();
+}
 
 void retro_cheat_reset(void)
 {}
