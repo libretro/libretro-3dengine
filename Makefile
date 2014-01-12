@@ -20,6 +20,8 @@ PKG_CONFIG = pkg-config
 
 TARGET_NAME := instancingviewer_camera
 
+INCFLAGS += -I. -Iutils
+
 ifneq (,$(findstring unix,$(platform)))
    TARGET := $(TARGET_NAME)_libretro.so
    fpic := -fPIC
@@ -37,7 +39,7 @@ else ifneq (,$(findstring osx,$(platform)))
    DEFINES += -DOSX
    CFLAGS += $(DEFINES)
    CXXFLAGS += $(DEFINES)
-   INCFLAGS = -Iinclude/compat
+   INCFLAGS += -Iinclude/compat
 else ifneq (,$(findstring armv,$(platform)))
    CC = gcc
    CXX = g++
@@ -77,7 +79,7 @@ else ifeq ($(platform), ios)
    DEFINES += -DIOS
    CFLAGS += $(DEFINES) -miphoneos-version-min=5.0
    CXXFLAGS += $(DEFINES) -miphoneos-version-min=5.0
-   INCFLAGS = -Iinclude/compat
+   INCFLAGS += -Iinclude/compat
 else ifeq ($(platform), qnx)
    TARGET := $(TARGET_NAME)_libretro_qnx.so
    fpic := -fPIC
@@ -85,7 +87,7 @@ else ifeq ($(platform), qnx)
    CXX = QCC -Vgcc_ntoarmv7le_cpp
    AR = QCC -Vgcc_ntoarmv7le
    GLES = 1
-   INCFLAGS = -Iinclude/compat
+   INCFLAGS += -Iinclude/compat
    LIBS := -lz
 else ifeq ($(platform), emscripten)
    TARGET := $(TARGET_NAME)_libretro_emscripten.bc
@@ -111,9 +113,9 @@ else
    CFLAGS += -O3
 endif
 
-OBJECTS := libretro.o glsym.o rpng.o
+OBJECTS := libretro.o glsym.o utils/rpng.o utils/base64.o
 CXXFLAGS += -Wall $(fpic)
-CFLAGS += -Wall $(fpic)
+CFLAGS += -Wall $(fpic) $(INCFLAGS)
 CXXFLAGS += $(INCFLAGS)
 
 LIBS += -lz
