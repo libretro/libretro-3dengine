@@ -370,16 +370,6 @@ static bool check_cube_distance_per_dimension(vec3 cube)
    return cube.x * cube.x + cube.y * cube.y + cube.z * cube.z < 25.0f;
 }
 
-#ifdef ANDROID
-#define LIB_DIR "/data/app-lib/org.retroarch-1"
-#define ROM_DIR "/storage/sdcard1/roms"
-#define FORMAT_STR "%s/libretro_%s.so"
-#else
-#define LIB_DIR "/home/squarepusher/local-repos/libretro-super/dist/unix"
-#define ROM_DIR "/home/squarepusher/roms"
-#define FORMAT_STR "%s/%s_libretro.so"
-#endif
-
 static void hit(vec3 cube)
 {
    (void)cube;
