@@ -312,6 +312,11 @@ static void context_reset(void)
 
 bool retro_load_game(const struct retro_game_info *info)
 {
+   if (strstr(info->path, ".obj"))
+      engine_program_cb = &engine_program_modelviewer;
+   else
+      engine_program_cb = &engine_program_instancingviewer;
+
    update_variables();
    memset(&camera_cb, 0, sizeof(camera_cb));
 
@@ -371,10 +376,6 @@ bool retro_load_game(const struct retro_game_info *info)
    if (log_cb)
       log_cb(RETRO_LOG_INFO, "Loaded game!\n");
 
-   if (strstr(info->path, ".obj"))
-      engine_program_cb = &engine_program_modelviewer;
-   else
-      engine_program_cb = &engine_program_instancingviewer;
 
    if (engine_program_cb && engine_program_cb->load_game)
       engine_program_cb->load_game(info);
