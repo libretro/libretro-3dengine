@@ -1,0 +1,11 @@
+newmtl wall 
+Ks 0.5 0.5 0.5
+Ns 50.0
+d 1.0
+map_Kd wall.png
+
+newmtl floor 
+Ks 0.5 0.5 0.5
+Ns 50.0
+d 1.0
+map_Kd floor.png
