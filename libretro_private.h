@@ -1,4 +1,4 @@
-/* Copyright (C) 2010-2013 The RetroArch team
+/* Copyright (C) 2010-2014 The RetroArch team
  *
  * ---------------------------------------------------------------------------------------
  * The following license statement only applies to this libretro API header (libretro_private.h).
@@ -40,6 +40,7 @@
                                            // Requests that this core is deinitialized, and a new core is loaded. It also escapes the main loop the core is currently
                                            // bound to.
                                            // The libretro core used is set with SET_LIBRETRO_PATH, and path to game is passed in _EXEC. NULL means no game.
+
 
 #endif
 
