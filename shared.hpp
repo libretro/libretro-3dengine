@@ -38,8 +38,5 @@ namespace std1 = std::tr1;
 
 extern retro_log_printf_t log_cb;
 
-void retro_stderr(const char *str);
-void retro_stderr_print(const char *fmt, ...);
-
 #endif
 

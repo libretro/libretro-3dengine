@@ -81,8 +81,8 @@ namespace GL
       if (!func)
       {
          func = get_symbol(sym);
-         if (!func)
-            retro_stderr_print("Didn't find GL symbol: %s\n", sym.c_str());
+         if (!func && log_cb)
+            log_cb(RETRO_LOG_ERROR, "Didn't find GL symbol: %s\n", sym.c_str());
       }
 
       return reinterpret_cast<Func>(func);
