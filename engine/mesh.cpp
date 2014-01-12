@@ -44,9 +44,9 @@ namespace GL
       SYM(glDeleteBuffers)(1, &vbo);
    }
 
-   void Mesh::set_scenewalker_default_lighting()
+   void Mesh::set_lighting(float r, float g, float b)
    {
-      light_pos = vec3(0, 10, 0);
+      light_pos = vec3(r, g, b);
    }
 
    void Mesh::set_ambient_lighting(float r, float g, float b)

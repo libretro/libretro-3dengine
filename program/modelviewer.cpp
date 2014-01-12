@@ -29,6 +29,9 @@ static void collision_detection(vec3& player_pos, vec3& velocity);
 static void wall_hug_detection(vec3& player_pos);
 static void scenewalker_reset_mesh_path(void);
 
+static float light_r;
+static float light_g;
+static float light_b;
 static float ambient_light_r;
 static float ambient_light_g;
 static float ambient_light_b;
@@ -178,34 +181,66 @@ static vec3 scenewalker_check_input(void)
 
    mat4 view = lookAt(player_pos, player_pos + look_dir, vec3(0, 1, 0));
 
+   bool start_pressed = input_state_cb(0, RETRO_DEVICE_JOYPAD, 0, RETRO_DEVICE_ID_JOYPAD_START);
    if (input_state_cb(0, RETRO_DEVICE_JOYPAD, 0, RETRO_DEVICE_ID_JOYPAD_L2))
    {
       if (input_state_cb(0, RETRO_DEVICE_JOYPAD, 0, RETRO_DEVICE_ID_JOYPAD_SELECT))
-         ambient_light_r -= 0.01;
+      {
+         if (start_pressed)
+            light_r -= 0.01;
+         else
+            ambient_light_r -= 0.01;
+      }
       else
-         ambient_light_r += 0.01;
+      {
+         if (start_pressed)
+            light_r += 0.01;
+         else
+            ambient_light_r += 0.01;
+      }
    }
 
    if (input_state_cb(0, RETRO_DEVICE_JOYPAD, 0, RETRO_DEVICE_ID_JOYPAD_R2))
    {
       if (input_state_cb(0, RETRO_DEVICE_JOYPAD, 0, RETRO_DEVICE_ID_JOYPAD_SELECT))
-         ambient_light_g -= 0.01;
+      {
+         if (start_pressed)
+            light_g -= 0.01;
+         else
+            ambient_light_g -= 0.01;
+      }
       else
-         ambient_light_g += 0.01;
+      {
+         if (start_pressed)
+            light_g += 0.01;
+         else
+            ambient_light_g += 0.01;
+      }
    }
 
    if (input_state_cb(0, RETRO_DEVICE_JOYPAD, 0, RETRO_DEVICE_ID_JOYPAD_R3))
    {
       if (input_state_cb(0, RETRO_DEVICE_JOYPAD, 0, RETRO_DEVICE_ID_JOYPAD_SELECT))
-         ambient_light_b -= 0.01;
+      {
+         if (start_pressed)
+            light_b -= 0.01;
+         else
+            ambient_light_b -= 0.01;
+      }
       else
-         ambient_light_b += 0.01;
+      {
+         if (start_pressed)
+            light_b += 0.01;
+         else
+            ambient_light_b += 0.01;
+      }
    }
 
    for (unsigned i = 0; i < meshes.size(); i++)
    {
       meshes[i]->set_view(view);
       meshes[i]->set_eye(player_pos);
+      meshes[i]->set_lighting(light_r, light_g, light_b);
       meshes[i]->set_ambient_lighting(ambient_light_r, ambient_light_g, ambient_light_b);
    }
 
@@ -504,28 +539,59 @@ static vec3 modelviewer_check_input(void)
    if (input_state_cb(0, RETRO_DEVICE_JOYPAD, 0, RETRO_DEVICE_ID_JOYPAD_A))
       analog_ry += 30000;
 
+   bool start_pressed = input_state_cb(0, RETRO_DEVICE_JOYPAD, 0, RETRO_DEVICE_ID_JOYPAD_START);
    if (input_state_cb(0, RETRO_DEVICE_JOYPAD, 0, RETRO_DEVICE_ID_JOYPAD_L2))
    {
       if (input_state_cb(0, RETRO_DEVICE_JOYPAD, 0, RETRO_DEVICE_ID_JOYPAD_SELECT))
-         ambient_light_r -= 0.01;
+      {
+         if (start_pressed)
+            light_r -= 0.01;
+         else
+            ambient_light_r -= 0.01;
+      }
       else
-         ambient_light_r += 0.01;
+      {
+         if (start_pressed)
+            light_r += 0.01;
+         else
+            ambient_light_r += 0.01;
+      }
    }
 
    if (input_state_cb(0, RETRO_DEVICE_JOYPAD, 0, RETRO_DEVICE_ID_JOYPAD_R2))
    {
       if (input_state_cb(0, RETRO_DEVICE_JOYPAD, 0, RETRO_DEVICE_ID_JOYPAD_SELECT))
-         ambient_light_g -= 0.01;
+      {
+         if (start_pressed)
+            light_g -= 0.01;
+         else
+            ambient_light_g -= 0.01;
+      }
       else
-         ambient_light_g += 0.01;
+      {
+         if (start_pressed)
+            light_g += 0.01;
+         else
+            ambient_light_g += 0.01;
+      }
    }
 
    if (input_state_cb(0, RETRO_DEVICE_JOYPAD, 0, RETRO_DEVICE_ID_JOYPAD_R3))
    {
       if (input_state_cb(0, RETRO_DEVICE_JOYPAD, 0, RETRO_DEVICE_ID_JOYPAD_SELECT))
-         ambient_light_b -= 0.01;
+      {
+         if (start_pressed)
+            light_b -= 0.01;
+         else
+            ambient_light_b -= 0.01;
+      }
       else
-         ambient_light_b += 0.01;
+      {
+         if (start_pressed)
+            light_b += 0.01;
+         else
+            ambient_light_b += 0.01;
+      }
    }
 
    model_scale *= 1.0f - analog_ry * 0.000001f;
@@ -544,6 +610,7 @@ static vec3 modelviewer_check_input(void)
    {
       meshes[i]->set_model(model);
       meshes[i]->set_ambient_lighting(ambient_light_r, ambient_light_g, ambient_light_b);
+      meshes[i]->set_lighting(light_r, light_g, light_b);
    }
    //check_collision_cube();
 
@@ -711,7 +778,7 @@ static void init_mesh(const std::string& path)
 
       if (mode_engine == MODE_SCENEWALKER)
       {
-         meshes[i]->set_scenewalker_default_lighting();
+         meshes[i]->set_lighting(0, 10, 0);
 
          const std::vector<GL::Vertex>& vertices = *meshes[i]->get_vertex();
          for (unsigned v = 0; v < vertices.size(); v += 3)
@@ -727,6 +794,18 @@ static void init_mesh(const std::string& path)
       }
    }
 
+   if (mode_engine == MODE_SCENEWALKER)
+   {
+      light_r = normalize(0);
+      light_g = normalize(10);
+      light_b = normalize(0);
+   }
+   else
+   {
+      light_r = normalize(-1);
+      light_g = normalize(-1);
+      light_b = normalize(-1);
+   }
    ambient_light_r = 0.25f;
    ambient_light_g = 0.25f;
    ambient_light_b = 0.25f;
