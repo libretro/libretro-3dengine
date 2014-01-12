@@ -73,6 +73,7 @@ namespace GL
          void set_blank(const std1::shared_ptr<Texture>& blank);
          void set_shader(const std1::shared_ptr<Shader>& shader);
 
+         void set_ambient_lighting(float r, float g, float b);
          void set_model(const glm::mat4& model);
          void set_view(const glm::mat4& view);
          void set_projection(const glm::mat4& projection);

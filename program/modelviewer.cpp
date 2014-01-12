@@ -29,6 +29,10 @@ static void collision_detection(vec3& player_pos, vec3& velocity);
 static void wall_hug_detection(vec3& player_pos);
 static void scenewalker_reset_mesh_path(void);
 
+static float ambient_light_r;
+static float ambient_light_g;
+static float ambient_light_b;
+
 static bool update;
 
 static vec3 player_size(0.4f, 0.8f, 0.4f);
@@ -174,10 +178,35 @@ static vec3 scenewalker_check_input(void)
 
    mat4 view = lookAt(player_pos, player_pos + look_dir, vec3(0, 1, 0));
 
+   if (input_state_cb(0, RETRO_DEVICE_JOYPAD, 0, RETRO_DEVICE_ID_JOYPAD_L2))
+   {
+      if (input_state_cb(0, RETRO_DEVICE_JOYPAD, 0, RETRO_DEVICE_ID_JOYPAD_SELECT))
+         ambient_light_r -= 0.01;
+      else
+         ambient_light_r += 0.01;
+   }
+
+   if (input_state_cb(0, RETRO_DEVICE_JOYPAD, 0, RETRO_DEVICE_ID_JOYPAD_R2))
+   {
+      if (input_state_cb(0, RETRO_DEVICE_JOYPAD, 0, RETRO_DEVICE_ID_JOYPAD_SELECT))
+         ambient_light_g -= 0.01;
+      else
+         ambient_light_g += 0.01;
+   }
+
+   if (input_state_cb(0, RETRO_DEVICE_JOYPAD, 0, RETRO_DEVICE_ID_JOYPAD_R3))
+   {
+      if (input_state_cb(0, RETRO_DEVICE_JOYPAD, 0, RETRO_DEVICE_ID_JOYPAD_SELECT))
+         ambient_light_b -= 0.01;
+      else
+         ambient_light_b += 0.01;
+   }
+
    for (unsigned i = 0; i < meshes.size(); i++)
    {
       meshes[i]->set_view(view);
       meshes[i]->set_eye(player_pos);
+      meshes[i]->set_ambient_lighting(ambient_light_r, ambient_light_g, ambient_light_b);
    }
 
    return player_size;
@@ -475,6 +504,30 @@ static vec3 modelviewer_check_input(void)
    if (input_state_cb(0, RETRO_DEVICE_JOYPAD, 0, RETRO_DEVICE_ID_JOYPAD_A))
       analog_ry += 30000;
 
+   if (input_state_cb(0, RETRO_DEVICE_JOYPAD, 0, RETRO_DEVICE_ID_JOYPAD_L2))
+   {
+      if (input_state_cb(0, RETRO_DEVICE_JOYPAD, 0, RETRO_DEVICE_ID_JOYPAD_SELECT))
+         ambient_light_r -= 0.01;
+      else
+         ambient_light_r += 0.01;
+   }
+
+   if (input_state_cb(0, RETRO_DEVICE_JOYPAD, 0, RETRO_DEVICE_ID_JOYPAD_R2))
+   {
+      if (input_state_cb(0, RETRO_DEVICE_JOYPAD, 0, RETRO_DEVICE_ID_JOYPAD_SELECT))
+         ambient_light_g -= 0.01;
+      else
+         ambient_light_g += 0.01;
+   }
+
+   if (input_state_cb(0, RETRO_DEVICE_JOYPAD, 0, RETRO_DEVICE_ID_JOYPAD_R3))
+   {
+      if (input_state_cb(0, RETRO_DEVICE_JOYPAD, 0, RETRO_DEVICE_ID_JOYPAD_SELECT))
+         ambient_light_b -= 0.01;
+      else
+         ambient_light_b += 0.01;
+   }
+
    model_scale *= 1.0f - analog_ry * 0.000001f;
    model_scale = clamp(model_scale, 0.0001f, 100.0f);
    model_rotate_x += analog_y * 0.0001f;
@@ -490,6 +543,7 @@ static vec3 modelviewer_check_input(void)
    for (unsigned i = 0; i < meshes.size(); i++)
    {
       meshes[i]->set_model(model);
+      meshes[i]->set_ambient_lighting(ambient_light_r, ambient_light_g, ambient_light_b);
    }
    //check_collision_cube();
 
@@ -672,6 +726,10 @@ static void init_mesh(const std::string& path)
          }
       }
    }
+
+   ambient_light_r = 0.25f;
+   ambient_light_g = 0.25f;
+   ambient_light_b = 0.25f;
 }
 
 extern char retro_path_info[1024];

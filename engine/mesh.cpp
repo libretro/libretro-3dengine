@@ -49,6 +49,11 @@ namespace GL
       light_pos = vec3(0, 10, 0);
    }
 
+   void Mesh::set_ambient_lighting(float r, float g, float b)
+   {
+      light_ambient = vec3(r, g, b);
+   }
+
    void Mesh::set_vertices(vector<Vertex> vertex)
    {
       set_vertices(std1::shared_ptr<vector<Vertex> >(new vector<Vertex>(vertex)));
