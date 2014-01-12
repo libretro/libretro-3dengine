@@ -15,13 +15,7 @@
 
 #include "rpng.h"
 
-#ifdef WANT_MINIZ
-#include "../../deps/miniz/zlib.h"
-#elif defined(EMSCRIPTEN)
-#include "miniz.h"
-#else
 #include <zlib.h>
-#endif
 
 #include <stdio.h>
 #include <stdlib.h>

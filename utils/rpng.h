@@ -17,7 +17,7 @@
 #define RPNG_H__
 
 #include <stdint.h>
-#include "shared.hpp"
+#include "boolean.h"
 
 // Modified version of RetroArch's PNG loader.
 // Uses bottom-left origin rather than top-left.
