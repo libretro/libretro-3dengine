@@ -223,7 +223,7 @@ static void check_collision_cube(void)
 }
 #endif
 
-static glm::vec3 program_check_input(void)
+static glm::vec3 instancingviewer_check_input(void)
 {
    static unsigned select_timeout = 0;
    input_poll_cb();
@@ -261,13 +261,13 @@ static glm::vec3 program_check_input(void)
    return look_dir;
 }
 
-void program_context_reset(void)
+static void instancingviewer_context_reset(void)
 {
    SYM(glGenBuffers)(1, &vbo);
    update = true;
 }
 
-void program_update_variables(retro_environment_t environ_cb)
+static void instancingviewer_update_variables(retro_environment_t environ_cb)
 {
    struct retro_variable var;
 
@@ -309,7 +309,7 @@ static void print_shader_log(GLuint shader)
    delete[] buffer;
 }
 
-void program_compile_shaders(void)
+static void instancingviewer_compile_shaders(void)
 {
    prog = SYM(glCreateProgram)();
    GLuint vert = SYM(glCreateShader)(GL_VERTEX_SHADER);
@@ -342,13 +342,13 @@ void program_compile_shaders(void)
    if (!status && log_cb)
       log_cb(RETRO_LOG_ERROR, "Program failed to link!\n");
 
-   program_context_reset();
+   instancingviewer_context_reset();
    tex = 0;
 }
 
-void program_run(void)
+static void instancingviewer_run(void)
 {
-   glm::vec3 look_dir = program_check_input();
+   glm::vec3 look_dir = instancingviewer_check_input();
 
    SYM(glBindFramebuffer)(GL_FRAMEBUFFER, hw_render.get_current_framebuffer());
    SYM(glClearColor)(0.1, 0.1, 0.1, 1.0);
@@ -392,9 +392,18 @@ void program_run(void)
    video_cb(RETRO_HW_FRAME_BUFFER_VALID, engine_width, engine_height, 0);
 }
 
-void program_load_game(const struct retro_game_info *info)
+static void instancingviewer_load_game(const struct retro_game_info *info)
 {
    player_pos = glm::vec3(0, 0, 0);
    texpath = info->path;
    first_init = false;
 }
+
+const engine_program_t engine_program_instancingviewer = {
+   instancingviewer_load_game,
+   instancingviewer_run,
+   instancingviewer_context_reset,
+   instancingviewer_update_variables,
+   instancingviewer_compile_shaders,
+   instancingviewer_check_input,
+};

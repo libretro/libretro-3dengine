@@ -32,6 +32,7 @@
 #include "gl.hpp"
 #include "glm/glm.hpp"
 #include "glm/gtc/matrix_transform.hpp"
+#include "program.h"
 
 struct retro_hw_render_callback hw_render;
 static struct retro_camera_callback camera_cb;
@@ -42,6 +43,7 @@ static retro_audio_sample_batch_t audio_batch_cb;
 retro_environment_t environ_cb;
 retro_input_poll_t input_poll_cb;
 retro_input_state_t input_state_cb;
+static const engine_program_t *engine_program_cb;
 
 #define BASE_WIDTH 320
 #define BASE_HEIGHT 240
@@ -164,7 +166,9 @@ void context_reset(void)
    GL::init_symbol_map();
 
    GL::dead_state = true;
-   program_compile_shaders();
+
+   if (engine_program_cb && engine_program_cb->compile_shaders)
+      engine_program_cb->compile_shaders();
    GL::dead_state = false;
 }
 
@@ -192,7 +196,8 @@ static void update_variables(void)
          log_cb(RETRO_LOG_INFO, "Got size: %u x %u.\n", engine_width, engine_height);
    }
 
-   program_update_variables(environ_cb);
+   if (engine_program_cb && engine_program_cb->update_variables)
+      engine_program_cb->update_variables(environ_cb);
 }
 
 void retro_run(void)
@@ -201,7 +206,8 @@ void retro_run(void)
    if (environ_cb(RETRO_ENVIRONMENT_GET_VARIABLE_UPDATE, &updated) && updated)
       update_variables();
 
-   program_run();
+   if (engine_program_cb && engine_program_cb->run)
+      engine_program_cb->run();
 }
 
 static void camera_gl_callback(unsigned texture_id, unsigned texture_target, const float *affine)
@@ -374,7 +380,10 @@ bool retro_load_game(const struct retro_game_info *info)
    if (log_cb)
       log_cb(RETRO_LOG_INFO, "Loaded game!\n");
 
-   program_load_game(info);
+   engine_program_cb = &engine_program_instancingviewer;
+
+   if (engine_program_cb && engine_program_cb->load_game)
+      engine_program_cb->load_game(info);
 
    return true;
 }
@@ -434,7 +443,8 @@ size_t retro_get_memory_size(unsigned id)
 
 void retro_reset(void)
 {
-   program_context_reset();
+   if (engine_program_cb && engine_program_cb->context_reset)
+      engine_program_cb->context_reset();
 }
 
 void retro_cheat_reset(void)

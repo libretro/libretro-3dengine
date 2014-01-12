@@ -115,7 +115,7 @@ endif
 
 ENGINE_OBJS  := engine/mesh.o engine/texture.o engine/object.o engine/shader.o
 UTIL_OBJS    := utils/cjson.o utils/rpng.o utils/base64.o
-PROGRAM_OBJS := program/instancingviewer.o
+PROGRAM_OBJS := program/instancingviewer.o program/modelviewer.o
 
 OBJECTS := libretro.o glsym.o $(ENGINE_OBJS) $(PROGRAM_OBJS) $(UTIL_OBJS)
 CXXFLAGS += -Wall $(fpic)

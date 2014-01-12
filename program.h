@@ -6,11 +6,6 @@
 #include "glm/glm.hpp"
 #include "glm/gtc/matrix_transform.hpp"
 
-extern void program_run(void);
-extern void program_context_reset(void);
-extern void program_update_variables(retro_environment_t environ_cb);
-extern void program_load_game(const struct retro_game_info *info);
-extern void program_compile_shaders(void);
 
 extern void context_reset(void);
 
@@ -26,5 +21,18 @@ extern GLuint g_texture_target;
 extern GLuint tex;
 
 #define ARRAY_SIZE(a) (sizeof(a) / sizeof((a)[0]))
+
+typedef struct engine_program
+{
+   void (*load_game)(const struct retro_game_info *info);
+   void (*run)(void);
+   void (*context_reset)(void);
+   void (*update_variables)(retro_environment_t environ_cb);
+   void (*compile_shaders)(void);
+   glm::vec3 (*check_input)(void);
+} engine_program_t;
+
+extern const engine_program_t engine_program_instancingviewer;
+extern const engine_program_t engine_program_modelviewer;
 
 #endif

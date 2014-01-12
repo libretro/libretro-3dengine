@@ -18,7 +18,7 @@ static bool update;
 
 static glm::vec3 player_pos;
 
-static glm::vec3 program_check_input(void)
+static glm::vec3 modelviewer_check_input(void)
 {
    static float model_rotate_y;
    static float model_rotate_x;
@@ -76,7 +76,7 @@ static glm::vec3 program_check_input(void)
    return player_pos;
 }
 
-void program_context_reset(void)
+static void modelviewer_context_reset(void)
 {
    meshes.clear();
    blank.reset();
@@ -84,7 +84,7 @@ void program_context_reset(void)
    update = true;
 }
 
-void program_update_variables(retro_environment_t environ_cb)
+static void modelviewer_update_variables(retro_environment_t environ_cb)
 {
    (void)environ_cb;
 #if 0
@@ -218,15 +218,15 @@ static void init_mesh(const std::string& path)
    }
 }
 
-void program_compile_shaders(void)
+static void modelviewer_compile_shaders(void)
 {
    blank = GL::Texture::blank();
    init_mesh(mesh_path);
 }
 
-void program_run(void)
+static void modelviewer_run(void)
 {
-   glm::vec3 look_dir = program_check_input();
+   glm::vec3 look_dir = modelviewer_check_input();
    (void)look_dir;
 
    SYM(glBindFramebuffer)(GL_FRAMEBUFFER, hw_render.get_current_framebuffer());
@@ -248,9 +248,18 @@ void program_run(void)
    video_cb(RETRO_HW_FRAME_BUFFER_VALID, engine_width, engine_height, 0);
 }
 
-void program_load_game(const struct retro_game_info *info)
+static void modelviewer_load_game(const struct retro_game_info *info)
 {
    player_pos = glm::vec3(0, 0, 0);
    mesh_path = info->path;
    first_init = false;
 }
+
+const engine_program_t engine_program_modelviewer = {
+   modelviewer_load_game,
+   modelviewer_run,
+   modelviewer_context_reset,
+   modelviewer_update_variables,
+   modelviewer_compile_shaders,
+   modelviewer_check_input,
+};
