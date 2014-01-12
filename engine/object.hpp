@@ -1,8 +1,7 @@
 /*
- *  InstancingViewer Camera Tech demo
+ *  Scenewalker Tech demo
  *  Copyright (C) 2013 - Hans-Kristian Arntzen
  *  Copyright (C) 2013 - Daniel De Matteis
- *  Copyright (C) 2013 - Michael Lelli
  *
  *  InstancingViewer is free software: you can redistribute it and/or modify it under the terms
  *  of the GNU General Public License as published by the Free Software Found-
@@ -16,30 +15,19 @@
  *  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef SHARED_HPP__
-#define SHARED_HPP__
+#ifndef OBJECT_HPP__
+#define OBJECT_HPP__
 
-#if defined(_MSC_VER) || defined(EMSCRIPTEN)
+#include "mesh.hpp"
+#include <string>
+#include <vector>
 #include <memory>
-#ifdef _MSC_VER
-#define snprintf _snprintf
-#endif
-#else
-#include <tr1/memory>
-#endif
+#include "shared.hpp"
 
-#if defined(__QNX__) || defined(__CELLOS_LV2__) || defined(IOS) || defined(OSX)
-namespace std1 = compat;
-#elif !defined(EMSCRIPTEN)
-namespace std1 = std::tr1;
-#endif
-
-#include "libretro.h"
-
-extern retro_log_printf_t log_cb;
-
-void retro_stderr(const char *str);
-void retro_stderr_print(const char *fmt, ...);
+namespace OBJ
+{
+   std::vector<std1::shared_ptr<GL::Mesh> > load_from_file(const std::string& path);
+}
 
 #endif
 

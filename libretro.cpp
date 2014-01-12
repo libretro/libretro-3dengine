@@ -35,7 +35,7 @@
 #define ARRAY_SIZE(a) (sizeof(a) / sizeof((a)[0]))
 static struct retro_hw_render_callback hw_render;
 static struct retro_camera_callback camera_cb;
-static retro_log_printf_t log_cb;
+retro_log_printf_t log_cb;
 static retro_video_refresh_t video_cb;
 static retro_audio_sample_t audio_cb;
 static retro_audio_sample_batch_t audio_batch_cb;

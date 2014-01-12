@@ -1,8 +1,7 @@
 /*
- *  InstancingViewer Camera Tech demo
+ *  Scenewalker Tech demo
  *  Copyright (C) 2013 - Hans-Kristian Arntzen
  *  Copyright (C) 2013 - Daniel De Matteis
- *  Copyright (C) 2013 - Michael Lelli
  *
  *  InstancingViewer is free software: you can redistribute it and/or modify it under the terms
  *  of the GNU General Public License as published by the Free Software Found-
@@ -16,30 +15,32 @@
  *  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef SHARED_HPP__
-#define SHARED_HPP__
+#ifndef SHADER_HPP__
+#define SHADER_HPP__
 
-#if defined(_MSC_VER) || defined(EMSCRIPTEN)
-#include <memory>
-#ifdef _MSC_VER
-#define snprintf _snprintf
-#endif
-#else
-#include <tr1/memory>
-#endif
+#include "gl.hpp"
 
-#if defined(__QNX__) || defined(__CELLOS_LV2__) || defined(IOS) || defined(OSX)
-namespace std1 = compat;
-#elif !defined(EMSCRIPTEN)
-namespace std1 = std::tr1;
-#endif
+namespace GL
+{
+   class Shader
+   {
+      public:
+         Shader(const std::string& vertex, const std::string& fragment);
+         ~Shader();
+         void use();
 
-#include "libretro.h"
+         static void unbind();
 
-extern retro_log_printf_t log_cb;
+         GLint uniform(const char* sym);
+         GLint attrib(const char* sym);
 
-void retro_stderr(const char *str);
-void retro_stderr_print(const char *fmt, ...);
+      private:
+         GLuint prog;
+         std::map<std::string, GLint> map;
+
+         GLuint compile_shader(GLenum type, const std::string& source);
+   };
+}
 
 #endif
 
