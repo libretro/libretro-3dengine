@@ -113,16 +113,16 @@ void retro_set_environment(retro_environment_t cb)
    struct retro_variable variables[] = {
       { "3dengine-resolution",
 #ifdef GLES
-         "Internal resolution; 800x600|320x240|360x480|480x272|512x384|512x512|640x240|640x448|640x480|720x576|800x600|960x720|1024x768" },
+         "Internal resolution; 320x240|360x480|480x272|512x384|512x512|640x240|640x448|640x480|720x576|800x600|960x720|1024x768" },
 #else
       "Internal resolution; 320x240|360x480|480x272|512x384|512x512|640x240|640x448|640x480|720x576|800x600|960x720|1024x768|1024x1024|1280x720|1280x960|1600x1200|1920x1080|1920x1440|1920x1600" },
 #endif
                         {
          "3dengine-cube-size",
-         "Cube size; 4|1|2|4|8|16|32|64|128" },
+         "Cube size; 1|2|4|8|16|32|64|128" },
                         {
          "3dengine-cube-stride",
-         "Cube stride; 3.0|2.0|3.0|4.0|5.0|6.0|7.0|8.0" },
+         "Cube stride; 2.0|3.0|4.0|5.0|6.0|7.0|8.0" },
                         {
          "3dengine-camera-type",
          "Camera FB Type; texture|raw framebuffer" },
