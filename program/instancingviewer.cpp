@@ -28,6 +28,14 @@ static GLuint vbo;
 static float cube_stride = 4.0f;
 static unsigned cube_size = 1;
 
+static float light_r;
+static float light_g;
+static float light_b;
+static float ambient_light_r;
+static float ambient_light_g;
+static float ambient_light_b;
+static float ambient_light_a;
+
 static vec3 player_pos;
 
 static float camera_rot_x;
@@ -285,6 +293,61 @@ static vec3 instancingviewer_check_input(void)
    else if (select_timeout != 0)
       select_timeout--;
 
+   bool start_pressed = input_state_cb(0, RETRO_DEVICE_JOYPAD, 0, RETRO_DEVICE_ID_JOYPAD_START);
+   if (input_state_cb(0, RETRO_DEVICE_JOYPAD, 0, RETRO_DEVICE_ID_JOYPAD_L2))
+   {
+      if (input_state_cb(0, RETRO_DEVICE_JOYPAD, 0, RETRO_DEVICE_ID_JOYPAD_SELECT))
+      {
+         if (start_pressed)
+            light_r -= 0.01;
+         else
+            ambient_light_r -= 0.01;
+      }
+      else
+      {
+         if (start_pressed)
+            light_r += 0.01;
+         else
+            ambient_light_r += 0.01;
+      }
+   }
+
+   if (input_state_cb(0, RETRO_DEVICE_JOYPAD, 0, RETRO_DEVICE_ID_JOYPAD_R2))
+   {
+      if (input_state_cb(0, RETRO_DEVICE_JOYPAD, 0, RETRO_DEVICE_ID_JOYPAD_SELECT))
+      {
+         if (start_pressed)
+            light_g -= 0.01;
+         else
+            ambient_light_g -= 0.01;
+      }
+      else
+      {
+         if (start_pressed)
+            light_g += 0.01;
+         else
+            ambient_light_g += 0.01;
+      }
+   }
+
+   if (input_state_cb(0, RETRO_DEVICE_JOYPAD, 0, RETRO_DEVICE_ID_JOYPAD_R3))
+   {
+      if (input_state_cb(0, RETRO_DEVICE_JOYPAD, 0, RETRO_DEVICE_ID_JOYPAD_SELECT))
+      {
+         if (start_pressed)
+            light_b -= 0.01;
+         else
+            ambient_light_b -= 0.01;
+      }
+      else
+      {
+         if (start_pressed)
+            light_b += 0.01;
+         else
+            ambient_light_b += 0.01;
+      }
+   }
+
    //check_collision_cube();
 
    return look_dir;
@@ -404,10 +467,10 @@ static void instancingviewer_run(void)
    SYM(glBindTexture)(g_texture_target, tex);
 
    int lloc = SYM(glGetUniformLocation)(prog, "light_pos");
-   vec3 light_pos(0, 150, 15);
+   vec3 light_pos(light_r, light_g, light_b);
    SYM(glUniform3fv)(lloc, 1, &light_pos[0]);
 
-   vec4 ambient_light(0.2, 0.2, 0.2, 1.0);
+   vec4 ambient_light(ambient_light_r, ambient_light_g, ambient_light_b, ambient_light_a);
    lloc = SYM(glGetUniformLocation)(prog, "ambient_light");
    SYM(glUniform4fv)(lloc, 1, &ambient_light[0]);
 
@@ -434,6 +497,14 @@ static void instancingviewer_load_game(const struct retro_game_info *info)
    player_pos = vec3(0, 0, 0);
    texpath = info->path;
    first_init = false;
+
+   light_r = 0;
+   light_g = 150;
+   light_b = 15;
+   ambient_light_r = 0.2;
+   ambient_light_g = 0.2;
+   ambient_light_b = 0.2;
+   ambient_light_a = 1.0;
 }
 
 const engine_program_t engine_program_instancingviewer = {
