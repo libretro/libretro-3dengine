@@ -18,7 +18,7 @@ endif
 
 PKG_CONFIG = pkg-config
 
-TARGET_NAME := instancingviewer_camera
+TARGET_NAME := 3dengine
 
 INCFLAGS += -I. -Iutils
 
