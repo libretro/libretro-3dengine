@@ -20,13 +20,15 @@ struct Cube
    struct Vertex vertices[CUBE_VERTS];
 };
 
+using namespace glm;
+
 static bool update;
 static GLuint prog;
 static GLuint vbo;
 static float cube_stride = 4.0f;
 static unsigned cube_size = 1;
 
-static glm::vec3 player_pos;
+static vec3 player_pos;
 
 static float camera_rot_x;
 static float camera_rot_y;
@@ -223,7 +225,7 @@ static void check_collision_cube(void)
 }
 #endif
 
-static glm::vec3 instancingviewer_check_input(void)
+static vec3 instancingviewer_check_input(void)
 {
    static unsigned select_timeout = 0;
    input_poll_cb();
@@ -237,13 +239,13 @@ static glm::vec3 instancingviewer_check_input(void)
 
    camera_rot_y = std::max(std::min(camera_rot_y, 80.0f), -80.0f);
 
-   glm::mat4 look_rot_x = glm::rotate(glm::mat4(1.0), camera_rot_x, glm::vec3(0, 1, 0));
-   glm::mat4 look_rot_y = glm::rotate(glm::mat4(1.0), camera_rot_y, glm::vec3(1, 0, 0));
-   glm::vec3 look_dir = glm::vec3(look_rot_x * look_rot_y * glm::vec4(0, 0, -1, 0));
+   mat4 look_rot_x = rotate(mat4(1.0), camera_rot_x, vec3(0, 1, 0));
+   mat4 look_rot_y = rotate(mat4(1.0), camera_rot_y, vec3(1, 0, 0));
+   vec3 look_dir = vec3(look_rot_x * look_rot_y * vec4(0, 0, -1, 0));
 
-   glm::vec3 look_dir_side = glm::vec3(look_rot_x * glm::vec4(1, 0, 0, 0));
+   vec3 look_dir_side = vec3(look_rot_x * vec4(1, 0, 0, 0));
 
-   glm::mat3 s = glm::mat3(glm::scale(glm::mat4(1.0), glm::vec3(0.25, 0.25, 0.25)));
+   mat3 s = mat3(scale(mat4(1.0), vec3(0.25, 0.25, 0.25)));
    if (input_state_cb(0, RETRO_DEVICE_JOYPAD, 0, RETRO_DEVICE_ID_JOYPAD_UP))
       player_pos += s * look_dir;
    if (input_state_cb(0, RETRO_DEVICE_JOYPAD, 0, RETRO_DEVICE_ID_JOYPAD_DOWN))
@@ -259,41 +261,6 @@ static glm::vec3 instancingviewer_check_input(void)
    //check_collision_cube();
 
    return look_dir;
-}
-
-static void instancingviewer_context_reset(void)
-{
-   SYM(glGenBuffers)(1, &vbo);
-   update = true;
-}
-
-static void instancingviewer_update_variables(retro_environment_t environ_cb)
-{
-   struct retro_variable var;
-
-   var.key = "3dengine-cube-size";
-   var.value = NULL;
-
-   if (environ_cb(RETRO_ENVIRONMENT_GET_VARIABLE, &var))
-   {
-      cube_size = atoi(var.value);
-      update = true;
-
-      if (!first_init)
-         context_reset();
-   }
-
-   var.key = "3dengine-cube-stride";
-   var.value = NULL;
-
-   if (environ_cb(RETRO_ENVIRONMENT_GET_VARIABLE, &var))
-   {
-      cube_stride = atof(var.value);
-      update = true;
-
-      if (!first_init)
-         context_reset();
-   }
 }
 
 static void print_shader_log(GLuint shader)
@@ -342,13 +309,56 @@ static void instancingviewer_compile_shaders(void)
    if (!status && log_cb)
       log_cb(RETRO_LOG_ERROR, "Program failed to link!\n");
 
-   instancingviewer_context_reset();
    tex = 0;
 }
 
+static void instancingviewer_context_reset(void)
+{
+   if (log_cb)
+      log_cb(RETRO_LOG_INFO, "Context reset!\n");
+
+   GL::set_function_cb(hw_render.get_proc_address);
+   GL::init_symbol_map();
+
+   SYM(glGenBuffers)(1, &vbo);
+   instancingviewer_compile_shaders();
+   update = true;
+}
+
+static void instancingviewer_update_variables(retro_environment_t environ_cb)
+{
+   struct retro_variable var;
+
+   var.key = "3dengine-cube-size";
+   var.value = NULL;
+
+   if (environ_cb(RETRO_ENVIRONMENT_GET_VARIABLE, &var))
+   {
+      cube_size = atoi(var.value);
+      update = true;
+
+      if (!first_init)
+         instancingviewer_context_reset();
+   }
+
+   var.key = "3dengine-cube-stride";
+   var.value = NULL;
+
+   if (environ_cb(RETRO_ENVIRONMENT_GET_VARIABLE, &var))
+   {
+      cube_stride = atof(var.value);
+      update = true;
+
+      if (!first_init)
+         instancingviewer_context_reset();
+   }
+}
+
+
+
 static void instancingviewer_run(void)
 {
-   glm::vec3 look_dir = instancingviewer_check_input();
+   vec3 look_dir = instancingviewer_check_input();
 
    SYM(glBindFramebuffer)(GL_FRAMEBUFFER, hw_render.get_current_framebuffer());
    SYM(glClearColor)(0.1, 0.1, 0.1, 1.0);
@@ -367,21 +377,21 @@ static void instancingviewer_run(void)
    SYM(glBindTexture)(g_texture_target, tex);
 
    int lloc = SYM(glGetUniformLocation)(prog, "light_pos");
-   glm::vec3 light_pos(0, 150, 15);
+   vec3 light_pos(0, 150, 15);
    SYM(glUniform3fv)(lloc, 1, &light_pos[0]);
 
-   glm::vec4 ambient_light(0.2, 0.2, 0.2, 1.0);
+   vec4 ambient_light(0.2, 0.2, 0.2, 1.0);
    lloc = SYM(glGetUniformLocation)(prog, "ambient_light");
    SYM(glUniform4fv)(lloc, 1, &ambient_light[0]);
 
    int vploc = SYM(glGetUniformLocation)(prog, "uVP");
-   glm::mat4 view = glm::lookAt(player_pos, player_pos + look_dir, glm::vec3(0, 1, 0));
-   glm::mat4 proj = glm::scale(glm::mat4(1.0), glm::vec3(1, -1, 1)) * glm::perspective(45.0f, 640.0f / 480.0f, 5.0f, 500.0f);
-   glm::mat4 vp = proj * view;
+   mat4 view = lookAt(player_pos, player_pos + look_dir, vec3(0, 1, 0));
+   mat4 proj = scale(mat4(1.0), vec3(1, -1, 1)) * perspective(45.0f, 640.0f / 480.0f, 5.0f, 500.0f);
+   mat4 vp = proj * view;
    SYM(glUniformMatrix4fv)(vploc, 1, GL_FALSE, &vp[0][0]);
 
    int modelloc = SYM(glGetUniformLocation)(prog, "uM");
-   glm::mat4 model = glm::mat4(1.0);
+   mat4 model = mat4(1.0);
    SYM(glUniformMatrix4fv)(modelloc, 1, GL_FALSE, &model[0][0]);
 
    display_cubes_array();
@@ -394,7 +404,7 @@ static void instancingviewer_run(void)
 
 static void instancingviewer_load_game(const struct retro_game_info *info)
 {
-   player_pos = glm::vec3(0, 0, 0);
+   player_pos = vec3(0, 0, 0);
    texpath = info->path;
    first_init = false;
 }
@@ -404,6 +414,5 @@ const engine_program_t engine_program_instancingviewer = {
    instancingviewer_run,
    instancingviewer_context_reset,
    instancingviewer_update_variables,
-   instancingviewer_compile_shaders,
    instancingviewer_check_input,
 };

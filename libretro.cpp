@@ -157,21 +157,6 @@ void retro_set_video_refresh(retro_video_refresh_t cb)
    video_cb = cb;
 }
 
-void context_reset(void)
-{
-   if (log_cb)
-      log_cb(RETRO_LOG_INFO, "Context reset!\n");
-
-   GL::set_function_cb(hw_render.get_proc_address);
-   GL::init_symbol_map();
-
-   GL::dead_state = true;
-
-   if (engine_program_cb && engine_program_cb->compile_shaders)
-      engine_program_cb->compile_shaders();
-   GL::dead_state = false;
-}
-
 static void update_variables(void)
 {
    struct retro_variable var;
@@ -317,6 +302,12 @@ static void camera_raw_fb_callback(const uint32_t *buffer, unsigned width, unsig
 static void camera_initialized(void)
 {
    camera_cb.start();
+}
+
+static void context_reset(void)
+{
+   if (engine_program_cb && engine_program_cb->context_reset)
+      engine_program_cb->context_reset();
 }
 
 bool retro_load_game(const struct retro_game_info *info)

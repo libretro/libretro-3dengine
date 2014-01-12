@@ -7,6 +7,8 @@
 #include <vector>
 #include <string>
 
+using namespace glm;
+
 static bool first_init = true;
 static std::string mesh_path;
 static bool discard_hack_enable = false;
@@ -16,9 +18,9 @@ static std1::shared_ptr<GL::Texture> blank;
 
 static bool update;
 
-static glm::vec3 player_pos;
+static vec3 player_pos;
 
-static glm::vec3 modelviewer_check_input(void)
+static vec3 modelviewer_check_input(void)
 {
    static float model_rotate_y;
    static float model_rotate_x;
@@ -58,49 +60,24 @@ static glm::vec3 modelviewer_check_input(void)
       analog_ry += 30000;
 
    model_scale *= 1.0f - analog_ry * 0.000001f;
-   model_scale = glm::clamp(model_scale, 0.0001f, 100.0f);
+   model_scale = clamp(model_scale, 0.0001f, 100.0f);
    model_rotate_x += analog_y * 0.0001f;
    model_rotate_y += analog_x * 0.00015f;
 
-   glm::mat4 translation = glm::translate(glm::mat4(1.0), glm::vec3(0, 0, -40));
-   glm::mat4 scaler = glm::scale(glm::mat4(1.0), glm::vec3(model_scale, model_scale, model_scale));
-   glm::mat4 rotate_x = glm::rotate(glm::mat4(1.0), model_rotate_x, glm::vec3(1, 0, 0));
-   glm::mat4 rotate_y = glm::rotate(glm::mat4(1.0), model_rotate_y, glm::vec3(0, 1, 0));
+   mat4 translation = translate(mat4(1.0), vec3(0, 0, -40));
+   mat4 scaler = scale(mat4(1.0), vec3(model_scale, model_scale, model_scale));
+   mat4 rotate_x = rotate(mat4(1.0), model_rotate_x, vec3(1, 0, 0));
+   mat4 rotate_y = rotate(mat4(1.0), model_rotate_y, vec3(0, 1, 0));
 
-   glm::mat4 model = translation * scaler * rotate_x * rotate_y;
+   mat4 model = translation * scaler * rotate_x * rotate_y;
 
    for (unsigned i = 0; i < meshes.size(); i++)
+   {
       meshes[i]->set_model(model);
+   }
    //check_collision_cube();
 
    return player_pos;
-}
-
-static void modelviewer_context_reset(void)
-{
-   meshes.clear();
-   blank.reset();
-
-   update = true;
-}
-
-static void modelviewer_update_variables(retro_environment_t environ_cb)
-{
-   (void)environ_cb;
-#if 0
-   struct retro_variable var;
-
-   var.key = "3dengine-modelviewer-discard-hack";
-   var.value = NULL;
-
-   if (environ_cb(RETRO_ENVIRONMENT_GET_VARIABLE, &var))
-   {
-      if (strcmp(var.value, "disabled") == 0)
-         discard_hack_enable = false;
-      else if (strcmp(var.value, "enabled") == 0)
-         discard_hack_enable = true;
-   }
-#endif
 }
 
 static void init_mesh(const std::string& path)
@@ -208,7 +185,7 @@ static void init_mesh(const std::string& path)
    std1::shared_ptr<GL::Shader> shader(new GL::Shader(vertex_shader, (discard_hack_enable) ? fragment_shader_avoid_discard_hack : fragment_shader));
    meshes = OBJ::load_from_file(path);
 
-   glm::mat4 projection = glm::scale(glm::mat4(1.0), glm::vec3(1, -1, 1)) * glm::perspective(45.0f, 640.0f / 480.0f, 1.0f, 100.0f);
+   mat4 projection = scale(mat4(1.0), vec3(1, -1, 1)) * perspective(45.0f, 640.0f / 480.0f, 1.0f, 100.0f);
 
    for (unsigned i = 0; i < meshes.size(); i++)
    {
@@ -218,15 +195,45 @@ static void init_mesh(const std::string& path)
    }
 }
 
-static void modelviewer_compile_shaders(void)
+static void modelviewer_context_reset(void)
 {
+   GL::dead_state = true;
+   meshes.clear();
+   blank.reset();
+   GL::dead_state = false;
+
+   GL::set_function_cb(hw_render.get_proc_address);
+   GL::init_symbol_map();
+
    blank = GL::Texture::blank();
    init_mesh(mesh_path);
+
+   update = true;
 }
+
+static void modelviewer_update_variables(retro_environment_t environ_cb)
+{
+   (void)environ_cb;
+#if 0
+   struct retro_variable var;
+
+   var.key = "3dengine-modelviewer-discard-hack";
+   var.value = NULL;
+
+   if (environ_cb(RETRO_ENVIRONMENT_GET_VARIABLE, &var))
+   {
+      if (strcmp(var.value, "disabled") == 0)
+         discard_hack_enable = false;
+      else if (strcmp(var.value, "enabled") == 0)
+         discard_hack_enable = true;
+   }
+#endif
+}
+
 
 static void modelviewer_run(void)
 {
-   glm::vec3 look_dir = modelviewer_check_input();
+   vec3 look_dir = modelviewer_check_input();
    (void)look_dir;
 
    SYM(glBindFramebuffer)(GL_FRAMEBUFFER, hw_render.get_current_framebuffer());
@@ -250,7 +257,7 @@ static void modelviewer_run(void)
 
 static void modelviewer_load_game(const struct retro_game_info *info)
 {
-   player_pos = glm::vec3(0, 0, 0);
+   player_pos = vec3(0, 0, 0);
    mesh_path = info->path;
    first_init = false;
 }
@@ -260,6 +267,5 @@ const engine_program_t engine_program_modelviewer = {
    modelviewer_run,
    modelviewer_context_reset,
    modelviewer_update_variables,
-   modelviewer_compile_shaders,
    modelviewer_check_input,
 };

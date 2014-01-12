@@ -6,9 +6,6 @@
 #include "glm/glm.hpp"
 #include "glm/gtc/matrix_transform.hpp"
 
-
-extern void context_reset(void);
-
 extern retro_input_poll_t input_poll_cb;
 extern retro_input_state_t input_state_cb;
 extern struct retro_hw_render_callback hw_render;
@@ -28,7 +25,6 @@ typedef struct engine_program
    void (*run)(void);
    void (*context_reset)(void);
    void (*update_variables)(retro_environment_t environ_cb);
-   void (*compile_shaders)(void);
    glm::vec3 (*check_input)(void);
 } engine_program_t;
 
