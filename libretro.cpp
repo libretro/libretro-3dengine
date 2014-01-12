@@ -27,6 +27,7 @@
 #include <string>
 #include <vector>
 #include "rpng.h"
+#include "program.h"
 
 #include "gl.hpp"
 #include "glm/glm.hpp"
@@ -39,7 +40,7 @@ retro_log_printf_t log_cb;
 static retro_video_refresh_t video_cb;
 static retro_audio_sample_t audio_cb;
 static retro_audio_sample_batch_t audio_batch_cb;
-static retro_environment_t environ_cb;
+retro_environment_t environ_cb;
 static retro_input_poll_t input_poll_cb;
 static retro_input_state_t input_state_cb;
 
@@ -55,87 +56,20 @@ using namespace glm;
 #define MAX_HEIGHT 1600
 #endif
 
-static unsigned cube_size = 1;
-static float cube_stride = 4.0f;
 static unsigned width = BASE_WIDTH;
 static unsigned height = BASE_HEIGHT;
 
 static std::string texpath;
 
-static GLuint prog;
-static GLuint vbo;
+GLuint prog;
 static GLuint tex;
 static GLuint g_texture_target = GL_TEXTURE_2D;
-static bool update;
+bool update;
 
 static vec3 player_pos;
 
 static float camera_rot_x;
 static float camera_rot_y;
-
-struct Vertex
-{
-   GLfloat vert[4];
-   GLfloat normal[4];
-   GLfloat tex[2];
-};
-
-struct Cube
-{
-   struct Vertex vertices[36];
-};
-
-static const Vertex vertex_data[] = {
-   { { -1, -1, -1, 1 }, { 0, 0, -1, 0 }, { 0, 1 } }, // Front
-   { {  1, -1, -1, 1 }, { 0, 0, -1, 0 }, { 1, 1 } },
-   { { -1,  1, -1, 1 }, { 0, 0, -1, 0 }, { 0, 0 } },
-   { {  1,  1, -1, 1 }, { 0, 0, -1, 0 }, { 1, 0 } },
-
-   { {  1, -1,  1, 1 }, { 0, 0,  1, 0 }, { 0, 1 } }, // Back
-   { { -1, -1,  1, 1 }, { 0, 0,  1, 0 }, { 1, 1 } },
-   { {  1,  1,  1, 1 }, { 0, 0,  1, 0 }, { 0, 0 } },
-   { { -1,  1,  1, 1 }, { 0, 0,  1, 0 }, { 1, 0 } },
-   
-   { { -1, -1,  1, 1 }, { -1, 0, 0, 0 }, { 0, 1 } }, // Left
-   { { -1, -1, -1, 1 }, { -1, 0, 0, 0 }, { 1, 1 } },
-   { { -1,  1,  1, 1 }, { -1, 0, 0, 0 }, { 0, 0 } },
-   { { -1,  1, -1, 1 }, { -1, 0, 0, 0 }, { 1, 0 } },
-
-   { { 1, -1, -1, 1 }, { 1, 0, 0, 0 }, { 0, 1 } }, // Right
-   { { 1, -1,  1, 1 }, { 1, 0, 0, 0 }, { 1, 1 } },
-   { { 1,  1, -1, 1 }, { 1, 0, 0, 0 }, { 0, 0 } },
-   { { 1,  1,  1, 1 }, { 1, 0, 0, 0 }, { 1, 0 } },
-
-   { { -1,  1, -1, 1 }, { 0, 1, 0, 0 }, { 0, 1 } }, // Top
-   { {  1,  1, -1, 1 }, { 0, 1, 0, 0 }, { 1, 1 } },
-   { { -1,  1,  1, 1 }, { 0, 1, 0, 0 }, { 0, 0 } },
-   { {  1,  1,  1, 1 }, { 0, 1, 0, 0 }, { 1, 0 } },
-
-   { { -1, -1,  1, 1 }, { 0, -1, 0, 0 }, { 0, 1 } }, // Bottom
-   { {  1, -1,  1, 1 }, { 0, -1, 0, 0 }, { 1, 1 } },
-   { { -1, -1, -1, 1 }, { 0, -1, 0, 0 }, { 0, 0 } },
-   { {  1, -1, -1, 1 }, { 0, -1, 0, 0 }, { 1, 0 } },
-};
-
-static const GLubyte indices[] = {
-   0, 1, 2, // Front
-   3, 2, 1,
-
-   4, 5, 6, // Back
-   7, 6, 5,
-
-   8, 9, 10, // Left
-   11, 10, 9,
-
-   12, 13, 14, // Right
-   15, 14, 13,
-
-   16, 17, 18, // Top
-   19, 18, 17,
-
-   20, 21, 22, // Bottom
-   23, 22, 21,
-};
 
 static const char *vertex_shader[] = {
    "uniform mat4 uVP;",
@@ -225,13 +159,6 @@ static void compile_program(void)
    SYM(glGetProgramiv)(prog, GL_LINK_STATUS, &status);
    if (!status && log_cb)
       log_cb(RETRO_LOG_ERROR, "Program failed to link!\n");
-}
-
-static void setup_vao(void)
-{
-   SYM(glGenBuffers)(1, &vbo);
-
-   update = true;
 }
 
 void retro_init(void)
@@ -330,48 +257,7 @@ void retro_set_video_refresh(retro_video_refresh_t cb)
    video_cb = cb;
 }
 
-static bool check_closest_cube(vec3 cube_max, vec3 closest_cube)
-{
-   return true;/*(((closest_cube.x > 0.0f) && (closest_cube.y > 0.0f) && (closest_cube.z > 0.0f)) &&
-      ((closest_cube.x < cube_max.x) && (closest_cube.y < cube_max.y) && (closest_cube.z < cube_max.z)));*/
-}
-
-static bool check_cube_distance_per_dimension(vec3 cube)
-{
-   return cube.x * cube.x + cube.y * cube.y + cube.z * cube.z < 25.0f;
-}
-
-static void hit(vec3 cube)
-{
-   (void)cube;
-}
-
-static void check_collision_cube()
-{
-   //float cube_origin = cube_stride * ((float)cube_size / -2.0f);
-   // emulate cube origin at {0, 0, 0}
-   vec3 shifted_player_pos = player_pos;
-   shifted_player_pos.z += 100;
-   vec3 closest_cube = vec3(0, 0, 0);//round((shifted_player_pos - cube_origin) / cube_stride);
-   vec3 closest_cube_pos = vec3(0, 0, 0);//cube_origin + closest_cube * cube_stride;
-   vec3 cube_distance = abs(shifted_player_pos - closest_cube_pos);
-   vec3 cube_size_max = (vec3)((float)cube_size - 1);
-#if 0
-   if (log_cb)
-   {
-      log_cb(RETRO_LOG_INFO, "cube_origin: %f\n", cube_origin);
-      log_cb(RETRO_LOG_INFO, "shifted_player_pos: %f %f %f\n", shifted_player_pos.x, shifted_player_pos.y, shifted_player_pos.z);
-      log_cb(RETRO_LOG_INFO, "cube: %f %f %f\n", closest_cube.x, closest_cube.y, closest_cube.z);
-      log_cb(RETRO_LOG_INFO, "cube_pos: %f %f %f\n", closest_cube_pos.x, closest_cube_pos.y, closest_cube_pos.z);
-      log_cb(RETRO_LOG_INFO, "cube_distance: %f %f %f\n", cube_distance.x, cube_distance.y, cube_distance.z);
-   }
-#endif
-   if (check_closest_cube(cube_size_max, closest_cube) &&
-         check_cube_distance_per_dimension(cube_distance))
-      hit(closest_cube);
-}
-
-static void context_reset(void)
+void context_reset(void)
 {
    if (log_cb)
       log_cb(RETRO_LOG_INFO, "Context reset!\n");
@@ -379,11 +265,11 @@ static void context_reset(void)
    GL::set_function_cb(hw_render.get_proc_address);
    GL::init_symbol_map();
    compile_program();
-   setup_vao();
+   program_context_reset();
    tex = 0;
 }
 
-static vec3 check_input()
+static vec3 check_input(void)
 {
    static unsigned select_timeout = 0;
    input_poll_cb();
@@ -416,7 +302,7 @@ static vec3 check_input()
    else if (select_timeout != 0)
       select_timeout--;
 
-   check_collision_cube();
+   program_check_input(look_rot_x, look_rot_y, look_dir, look_dir_side, player_pos);
 
    return look_dir;
 }
@@ -447,84 +333,8 @@ static void update_variables(void)
       if (log_cb)
          log_cb(RETRO_LOG_INFO, "Got size: %u x %u.\n", width, height);
    }
-   
-   var.key = "cube_size";
-   var.value = NULL;
 
-   if (environ_cb(RETRO_ENVIRONMENT_GET_VARIABLE, &var))
-   {
-      cube_size = atoi(var.value);
-      update = true;
-
-      if (!first_init)
-         context_reset();
-   }
-
-   var.key = "cube_stride";
-   var.value = NULL;
-
-   if (environ_cb(RETRO_ENVIRONMENT_GET_VARIABLE, &var))
-   {
-      cube_stride = atof(var.value);
-      update = true;
-
-      if (!first_init)
-         context_reset();
-   }
-}
-
-static void display_cubes_array(void)
-{
-   SYM(glBindBuffer)(GL_ARRAY_BUFFER, vbo);
-   int vloc = SYM(glGetAttribLocation)(prog, "aVertex");
-   SYM(glVertexAttribPointer)(vloc, 4, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*)(offsetof(Vertex, vert)));
-   SYM(glEnableVertexAttribArray)(vloc);
-   int nloc = SYM(glGetAttribLocation)(prog, "aNormal");
-   SYM(glVertexAttribPointer)(nloc, 4, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*)(offsetof(Vertex, normal)));
-   SYM(glEnableVertexAttribArray)(nloc);
-   int tcloc = SYM(glGetAttribLocation)(prog, "aTexCoord");
-   SYM(glVertexAttribPointer)(tcloc, 2, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*)(offsetof(Vertex, tex)));
-   SYM(glEnableVertexAttribArray)(tcloc);
-
-   if (update)
-   {
-      update = false;
-
-      std::vector<Cube> cubes;
-      cubes.resize(cube_size * cube_size * cube_size);
-
-      for (unsigned x = 0; x < cube_size; x++)
-      {
-         for (unsigned y = 0; y < cube_size; y++)
-         {
-            for (unsigned z = 0; z < cube_size; z++)
-            {
-               Cube &cube = cubes[((cube_size * cube_size * z) + (cube_size * y) + x)];
-
-               float off_x = cube_stride * ((float)x - cube_size / 2);
-               float off_y = cube_stride * ((float)y - cube_size / 2);
-               float off_z = -100.0f + cube_stride * ((float)z - cube_size / 2);
-
-               for (unsigned v = 0; v < 36; v++)
-               {
-                  cube.vertices[v] = vertex_data[indices[v]];
-                  cube.vertices[v].vert[0] += off_x;
-                  cube.vertices[v].vert[1] += off_y;
-                  cube.vertices[v].vert[2] += off_z;
-               }
-            }
-         }
-      }
-      SYM(glBufferData)(GL_ARRAY_BUFFER, cube_size * cube_size * cube_size * sizeof(Cube),
-            &cubes[0], GL_STATIC_DRAW);
-      SYM(glBindBuffer)(GL_ARRAY_BUFFER, 0);
-   }
-
-   SYM(glDrawArrays)(GL_TRIANGLES, 0, 36 * cube_size * cube_size * cube_size);
-   SYM(glBindBuffer)(GL_ARRAY_BUFFER, 0);
-   SYM(glDisableVertexAttribArray)(vloc);
-   SYM(glDisableVertexAttribArray)(nloc);
-   SYM(glDisableVertexAttribArray)(tcloc);
+   program_update_variables(environ_cb, first_init);
 }
 
 void retro_run(void)
@@ -569,7 +379,7 @@ void retro_run(void)
    mat4 model = mat4(1.0);
    SYM(glUniformMatrix4fv)(modelloc, 1, GL_FALSE, &model[0][0]);
 
-   display_cubes_array();
+   program_run();
 
    SYM(glUseProgram)(0);
    SYM(glBindTexture)(g_texture_target, 0);
