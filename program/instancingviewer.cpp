@@ -232,6 +232,33 @@ static vec3 instancingviewer_check_input(void)
 
    int x = input_state_cb(0, RETRO_DEVICE_MOUSE, 0, RETRO_DEVICE_ID_MOUSE_X);
    int y = input_state_cb(0, RETRO_DEVICE_MOUSE, 0, RETRO_DEVICE_ID_MOUSE_Y);
+
+   int analog_x = input_state_cb(0, RETRO_DEVICE_ANALOG,
+         RETRO_DEVICE_INDEX_ANALOG_LEFT, RETRO_DEVICE_ID_ANALOG_X);
+
+   int analog_y = input_state_cb(0, RETRO_DEVICE_ANALOG,
+         RETRO_DEVICE_INDEX_ANALOG_LEFT, RETRO_DEVICE_ID_ANALOG_Y);
+
+   int analog_ry = input_state_cb(0, RETRO_DEVICE_ANALOG,
+         RETRO_DEVICE_INDEX_ANALOG_RIGHT, RETRO_DEVICE_ID_ANALOG_Y);
+
+   int analog_rx = input_state_cb(0, RETRO_DEVICE_ANALOG,
+         RETRO_DEVICE_INDEX_ANALOG_RIGHT, RETRO_DEVICE_ID_ANALOG_X);
+
+   if (abs(analog_rx) < 10000)
+      analog_rx = 0;
+   if (abs(analog_ry) < 10000)
+      analog_ry = 0;
+
+   if (abs(analog_x) < 10000)
+      analog_x = 0;
+   if (abs(analog_y) < 10000)
+      analog_y = 0;
+   if (analog_ry)
+      y  = analog_ry;
+   if (analog_rx)
+      x = analog_rx;
+
    x = std::max(std::min(x, 20), -20);
    y = std::max(std::min(y, 20), -20);
    camera_rot_x -= 0.20 * x;
