@@ -113,7 +113,7 @@ else
    CFLAGS += -O3
 endif
 
-OBJECTS := libretro.o glsym.o engine/mesh.o engine/texture.o engine/shader.o utils/cjson.o utils/rpng.o utils/base64.o
+OBJECTS := libretro.o glsym.o engine/mesh.o engine/texture.o engine/object.o engine/shader.o utils/cjson.o utils/rpng.o utils/base64.o
 CXXFLAGS += -Wall $(fpic)
 CFLAGS += -Wall $(fpic) $(INCFLAGS)
 CXXFLAGS += $(INCFLAGS)
