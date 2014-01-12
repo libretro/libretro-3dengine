@@ -5,6 +5,9 @@
 
 #define CUBE_VERTS 36
 
+static bool first_init = true;
+static std::string texpath;
+
 struct Vertex
 {
    GLfloat vert[4];
@@ -189,7 +192,7 @@ void program_context_reset(void)
    update = true;
 }
 
-void program_update_variables(retro_environment_t environ_cb, bool first_init)
+void program_update_variables(retro_environment_t environ_cb)
 {
    struct retro_variable var;
 
@@ -221,4 +224,10 @@ void program_update_variables(retro_environment_t environ_cb, bool first_init)
 void program_run(void)
 {
    display_cubes_array();
+}
+
+void program_load_game(const struct retro_game_info *info)
+{
+   texpath = info->path;
+   first_init = false;
 }

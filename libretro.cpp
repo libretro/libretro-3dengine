@@ -59,7 +59,6 @@ using namespace glm;
 static unsigned width = BASE_WIDTH;
 static unsigned height = BASE_HEIGHT;
 
-static std::string texpath;
 
 GLuint prog;
 static GLuint tex;
@@ -308,7 +307,6 @@ static vec3 check_input(void)
 }
 
 
-static bool first_init = true;
 
 static void update_variables(void)
 {
@@ -334,7 +332,7 @@ static void update_variables(void)
          log_cb(RETRO_LOG_INFO, "Got size: %u x %u.\n", width, height);
    }
 
-   program_update_variables(environ_cb, first_init);
+   program_update_variables(environ_cb);
 }
 
 void retro_run(void)
@@ -557,9 +555,8 @@ bool retro_load_game(const struct retro_game_info *info)
    if (log_cb)
       log_cb(RETRO_LOG_INFO, "Loaded game!\n");
    player_pos = vec3(0, 0, 0);
-   texpath = info->path;
 
-   first_init = false;
+   program_load_game(info);
 
    return true;
 }
