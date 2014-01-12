@@ -20,7 +20,7 @@ struct Cube
    struct Vertex vertices[CUBE_VERTS];
 };
 
-extern bool update;
+static bool update;
 extern GLuint prog;
 GLuint vbo;
 static float cube_stride = 4.0f;

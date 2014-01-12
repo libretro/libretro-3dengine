@@ -63,7 +63,6 @@ static unsigned height = BASE_HEIGHT;
 GLuint prog;
 static GLuint tex;
 static GLuint g_texture_target = GL_TEXTURE_2D;
-bool update;
 
 static vec3 player_pos;
 
