@@ -92,7 +92,7 @@ void retro_get_system_info(struct retro_system_info *info)
    info->library_name     = "Libretro 3DEngine";
    info->library_version  = "v1";
    info->need_fullpath    = false;
-   info->valid_extensions = "png|obj";
+   info->valid_extensions = "png|mtl|obj";
 }
 
 void retro_get_system_av_info(struct retro_system_av_info *info)
@@ -310,9 +310,12 @@ static void context_reset(void)
       engine_program_cb->context_reset();
 }
 
+char retro_path_info[1024];
+
 bool retro_load_game(const struct retro_game_info *info)
 {
-   if (strstr(info->path, ".obj"))
+   strcpy(retro_path_info, info->path);
+   if (strstr(info->path, ".obj") || strstr(info->path, ".mtl"))
       engine_program_cb = &engine_program_modelviewer;
    else
       engine_program_cb = &engine_program_instancingviewer;

@@ -25,7 +25,8 @@ namespace GL
 {
    Mesh::Mesh() : 
       vertex_type(GL_TRIANGLES),
-      light_pos(0, 10, 0),
+      light_pos(normalize(vec3(-1, -1, -1))),
+      //light_pos(0, 10, 0),
       light_ambient(0.25f, 0.25f, 0.25f),
       model(mat4(1.0)),
       view(mat4(1.0)),
