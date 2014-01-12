@@ -33,10 +33,10 @@
 #include "glm/glm.hpp"
 #include "glm/gtc/matrix_transform.hpp"
 
-static struct retro_hw_render_callback hw_render;
+struct retro_hw_render_callback hw_render;
 static struct retro_camera_callback camera_cb;
 retro_log_printf_t log_cb;
-static retro_video_refresh_t video_cb;
+retro_video_refresh_t video_cb;
 static retro_audio_sample_t audio_cb;
 static retro_audio_sample_batch_t audio_batch_cb;
 retro_environment_t environ_cb;
@@ -53,8 +53,8 @@ retro_input_state_t input_state_cb;
 #define MAX_HEIGHT 1600
 #endif
 
-static unsigned width = BASE_WIDTH;
-static unsigned height = BASE_HEIGHT;
+unsigned engine_width = BASE_WIDTH;
+unsigned engine_height = BASE_HEIGHT;
 
 GLuint tex;
 GLuint g_texture_target = GL_TEXTURE_2D;
@@ -162,7 +162,10 @@ void context_reset(void)
 
    GL::set_function_cb(hw_render.get_proc_address);
    GL::init_symbol_map();
+
+   GL::dead_state = true;
    program_compile_shaders();
+   GL::dead_state = false;
 }
 
 static void update_variables(void)
@@ -180,13 +183,13 @@ static void update_variables(void)
       
       pch = strtok(str, "x");
       if (pch)
-         width = strtoul(pch, NULL, 0);
+         engine_width = strtoul(pch, NULL, 0);
       pch = strtok(NULL, "x");
       if (pch)
-         height = strtoul(pch, NULL, 0);
+         engine_height = strtoul(pch, NULL, 0);
 
       if (log_cb)
-         log_cb(RETRO_LOG_INFO, "Got size: %u x %u.\n", width, height);
+         log_cb(RETRO_LOG_INFO, "Got size: %u x %u.\n", engine_width, engine_height);
    }
 
    program_update_variables(environ_cb);
@@ -198,14 +201,7 @@ void retro_run(void)
    if (environ_cb(RETRO_ENVIRONMENT_GET_VARIABLE_UPDATE, &updated) && updated)
       update_variables();
 
-   SYM(glBindFramebuffer)(GL_FRAMEBUFFER, hw_render.get_current_framebuffer());
-   SYM(glClearColor)(0.1, 0.1, 0.1, 1.0);
-   SYM(glViewport)(0, 0, width, height);
-   SYM(glClear)(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-
    program_run();
-
-   video_cb(RETRO_HW_FRAME_BUFFER_VALID, width, height, 0);
 }
 
 static void camera_gl_callback(unsigned texture_id, unsigned texture_target, const float *affine)
@@ -385,6 +381,8 @@ bool retro_load_game(const struct retro_game_info *info)
 
 void retro_unload_game(void)
 {
+   GL::dead_state = true;
+
    if (convert_buffer)
       delete[] convert_buffer;
    convert_buffer = NULL;

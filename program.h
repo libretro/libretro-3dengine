@@ -16,6 +16,11 @@ extern void context_reset(void);
 
 extern retro_input_poll_t input_poll_cb;
 extern retro_input_state_t input_state_cb;
+extern struct retro_hw_render_callback hw_render;
+extern retro_video_refresh_t video_cb;
+
+extern unsigned engine_width;
+extern unsigned engine_height;
 
 extern GLuint g_texture_target;
 extern GLuint tex;

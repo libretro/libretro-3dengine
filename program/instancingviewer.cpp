@@ -350,6 +350,11 @@ void program_run(void)
 {
    glm::vec3 look_dir = program_check_input();
 
+   SYM(glBindFramebuffer)(GL_FRAMEBUFFER, hw_render.get_current_framebuffer());
+   SYM(glClearColor)(0.1, 0.1, 0.1, 1.0);
+   SYM(glViewport)(0, 0, engine_width, engine_height);
+   SYM(glClear)(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
    SYM(glUseProgram)(prog);
 
    SYM(glEnable)(GL_DEPTH_TEST);
@@ -383,6 +388,8 @@ void program_run(void)
 
    SYM(glUseProgram)(0);
    SYM(glBindTexture)(g_texture_target, 0);
+
+   video_cb(RETRO_HW_FRAME_BUFFER_VALID, engine_width, engine_height, 0);
 }
 
 void program_load_game(const struct retro_game_info *info)
