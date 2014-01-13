@@ -34,6 +34,10 @@
 #include "glm/gtc/matrix_transform.hpp"
 #include "program.h"
 
+retro_position_t current_location;
+
+static bool location_enable = false;
+static bool camera_enable = false;
 struct retro_hw_render_callback hw_render;
 static struct retro_camera_callback camera_cb;
 retro_log_printf_t log_cb;
@@ -45,6 +49,8 @@ retro_environment_t environ_cb;
 retro_input_poll_t input_poll_cb;
 retro_input_state_t input_state_cb;
 static const engine_program_t *engine_program_cb;
+
+static bool display_position;
 
 #define BASE_WIDTH 320
 #define BASE_HEIGHT 240
@@ -135,6 +141,7 @@ void retro_set_environment(retro_environment_t cb)
                            "Location enable; disabled|enabled"
                         },
                   { "3dengine-modelviewer-discard-hack", "Discard hack enable; disabled|enabled" },
+                  { "3dengine-location-display-position", "Location position OSD; disabled|enabled" },
       { NULL, NULL },
    };
 
@@ -190,6 +197,17 @@ static void update_variables(void)
          log_cb(RETRO_LOG_INFO, "Got size: %u x %u.\n", engine_width, engine_height);
    }
 
+   var.key = "3dengine-location-display-position";
+   var.value = NULL;
+
+   if (environ_cb(RETRO_ENVIRONMENT_GET_VARIABLE, &var) && var.value)
+   {
+      if (strcmp(var.value, "disabled") == 0)
+         display_position = false;
+      else if (strcmp(var.value, "enabled") == 0)
+         display_position = true;
+   }
+
    if (engine_program_cb && engine_program_cb->update_variables)
       engine_program_cb->update_variables(environ_cb);
 }
@@ -199,6 +217,24 @@ void retro_run(void)
    bool updated = false;
    if (environ_cb(RETRO_ENVIRONMENT_GET_VARIABLE_UPDATE, &updated) && updated)
       update_variables();
+
+   if (location_enable && location_cb.get_position)
+   {
+      if (location_cb.get_position(&current_location.latitude, &current_location.longitude, &current_location.horizontal_accuracy,
+               &current_location.vertical_accuracy))
+      {
+         if (display_position)
+         {
+            struct retro_message msg; 
+            char msg_local[512];
+            snprintf(msg_local, sizeof(msg_local), "LAT %f LON %f HACC %f VACC %f", current_location.latitude, current_location.longitude,
+                  current_location.horizontal_accuracy, current_location.vertical_accuracy);
+            msg.msg = msg_local;
+            msg.frames = 180;
+            environ_cb(RETRO_ENVIRONMENT_SET_MESSAGE, (void*)&msg);
+         }
+      }
+   }
 
    if (engine_program_cb && engine_program_cb->run)
       engine_program_cb->run();
@@ -310,7 +346,7 @@ static void camera_raw_fb_callback(const uint32_t *buffer, unsigned width, unsig
 
 static void camera_initialized(void)
 {
-   if (camera_cb.start)
+   if (camera_enable && camera_cb.start)
       camera_cb.start();
 }
 
@@ -324,13 +360,13 @@ char retro_path_info[1024];
 
 static void location_initialized(void)
 {
-   if (location_cb.start)
+   if (location_enable && location_cb.start)
       location_cb.start();
 }
 
 static void location_deinitialized(void)
 {
-   if (location_cb.stop)
+   if (location_enable && location_cb.stop)
       location_cb.stop();
 }
 
@@ -353,6 +389,7 @@ bool retro_load_game(const struct retro_game_info *info)
    {
       if (!strcmp(var.value, "enabled"))
       {
+         location_enable = true;
          location_cb.initialized = location_initialized;
          location_cb.deinitialized = location_deinitialized;
          environ_cb(RETRO_ENVIRONMENT_GET_LOCATION_INTERFACE, &location_cb);
@@ -376,6 +413,7 @@ bool retro_load_game(const struct retro_game_info *info)
    {
       if (!strcmp(var.value, "enabled"))
       {
+         camera_enable = true;
          var.key = "3dengine-camera-type";
          var.value = NULL;
 
@@ -395,7 +433,7 @@ bool retro_load_game(const struct retro_game_info *info)
 
          camera_cb.initialized = camera_initialized;
 
-         if (!environ_cb(RETRO_ENVIRONMENT_GET_CAMERA_INTERFACE, &camera_cb))
+         if (camera_enable && !environ_cb(RETRO_ENVIRONMENT_GET_CAMERA_INTERFACE, &camera_cb))
          {
             if (log_cb)
                log_cb(RETRO_LOG_ERROR, "camera is not supported.\n");
@@ -415,7 +453,7 @@ bool retro_load_game(const struct retro_game_info *info)
       return false;
 
 #ifdef GLES
-   if (camera_cb.caps & (1 << RETRO_CAMERA_BUFFER_RAW_FRAMEBUFFER) && !gl_query_extension("BGRA8888"))
+   if (camera_enable && camera_cb.caps & (1 << RETRO_CAMERA_BUFFER_RAW_FRAMEBUFFER) && !gl_query_extension("BGRA8888"))
    {
       if (log_cb)
          log_cb(RETRO_LOG_ERROR, "no BGRA8888 support for raw framebuffer, exiting...\n");

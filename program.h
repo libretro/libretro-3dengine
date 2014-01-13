@@ -19,6 +19,14 @@ extern GLuint tex;
 
 #define ARRAY_SIZE(a) (sizeof(a) / sizeof((a)[0]))
 
+typedef struct
+{
+   double latitude;
+   double longitude;
+   double horizontal_accuracy;
+   double vertical_accuracy;
+} retro_position_t;
+
 typedef struct engine_program
 {
    void (*load_game)(const struct retro_game_info *info);
