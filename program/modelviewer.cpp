@@ -894,22 +894,29 @@ static inline bool vequal(const vec3& a, const vec3& b)
 
 static void test_crash_detection(void)
 {
-   vec3 pos = vec3(0.0f);
+   vec3 pos, out_pos;
+   float a, b,c, d, e;
+   (void)a;
+   (void)b;
+   (void)c;
+   (void)d;
+   (void)e;
+
+   pos = vec3(0.0f);
    
-   float a = point_crash_time(pos, vec3(1, 0, 0), vec3(3, 0, 0));
+   a = point_crash_time(pos, vec3(1, 0, 0), vec3(3, 0, 0));
    assert(fequal(a, 2.0f));
 
-   float b = point_crash_time(pos, vec3(1, 0, 0), vec3(2, 2, 0));
+   b = point_crash_time(pos, vec3(1, 0, 0), vec3(2, 2, 0));
    assert(fequal(b, 10.0f));
 
-   float c = point_crash_time(pos, vec3(1, 0, 0), vec3(1.0, 0.5, 0.0));
+   c = point_crash_time(pos, vec3(1, 0, 0), vec3(1.0, 0.5, 0.0));
    assert(fequal(c, 1.0f - std::cos(30.0f / 180.0f * M_PI)));
 
-   float d = point_crash_time(pos, vec3(0, 1, 0), vec3(0.5, 1.0, 0.0));
+   d = point_crash_time(pos, vec3(0, 1, 0), vec3(0.5, 1.0, 0.0));
    assert(fequal(d, 1.0f - std::cos(30.0f / 180.0f * M_PI)));
 
-   vec3 out_pos;
-   float e = line_crash_time(pos, vec3(1, 0, 0), vec3(4, -1, 0), vec3(4, 1, 0), out_pos);
+   e = line_crash_time(pos, vec3(1, 0, 0), vec3(4, -1, 0), vec3(4, 1, 0), out_pos);
    assert(fequal(e, 3.0f) && vequal(out_pos, vec3(4, 0, 0)));
 
    if (log_cb)

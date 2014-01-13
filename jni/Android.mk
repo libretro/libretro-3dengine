@@ -17,7 +17,7 @@ ifeq ($(TARGET_ARCH),mips)
 LOCAL_CFLAGS += -DANDROID_MIPS
 endif
 
-LOCAL_SRC_FILES += $(wildcard ../*.cpp) $(wildcard ../engine/*.cpp) $(wildcard ../*.c) $(wildcard ../utils/*.c)
+LOCAL_SRC_FILES += $(wildcard ../*.cpp) $(wildcard ../engine/*.cpp) $(wildcard ../program/*.cpp) $(wildcard ../*.c) $(wildcard ../utils/*.c)
 LOCAL_CXXFLAGS += -O2 -Wall -ffast-math -fexceptions -DGLES -DANDROID -I../ -I../utils
 LOCAL_CFLAGS += -I../ -I../utils
 LOCAL_LDLIBS += -lz -llog -lGLESv2

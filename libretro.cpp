@@ -415,7 +415,7 @@ bool retro_load_game(const struct retro_game_info *info)
       return false;
 
 #ifdef GLES
-   if (camera_cb && camera_cb.caps & (1 << RETRO_CAMERA_BUFFER_RAW_FRAMEBUFFER) && !gl_query_extension("BGRA8888"))
+   if (camera_cb.caps & (1 << RETRO_CAMERA_BUFFER_RAW_FRAMEBUFFER) && !gl_query_extension("BGRA8888"))
    {
       if (log_cb)
          log_cb(RETRO_LOG_ERROR, "no BGRA8888 support for raw framebuffer, exiting...\n");
