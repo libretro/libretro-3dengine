@@ -322,5 +322,5 @@ void coll_triangles_push(unsigned v, const std::vector<GL::Vertex>& vertices, ve
 
 void coll_triangles_clear(void)
 {
-      triangles.clear();
+   triangles.clear();
 }
