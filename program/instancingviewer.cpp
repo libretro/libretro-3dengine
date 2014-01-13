@@ -422,7 +422,7 @@ static void instancingviewer_update_variables(retro_environment_t environ_cb)
    var.key = "3dengine-cube-size";
    var.value = NULL;
 
-   if (environ_cb(RETRO_ENVIRONMENT_GET_VARIABLE, &var))
+   if (environ_cb(RETRO_ENVIRONMENT_GET_VARIABLE, &var) && var.value)
    {
       cube_size = atoi(var.value);
       update = true;
@@ -434,7 +434,7 @@ static void instancingviewer_update_variables(retro_environment_t environ_cb)
    var.key = "3dengine-cube-stride";
    var.value = NULL;
 
-   if (environ_cb(RETRO_ENVIRONMENT_GET_VARIABLE, &var))
+   if (environ_cb(RETRO_ENVIRONMENT_GET_VARIABLE, &var) && var.value)
    {
       cube_stride = atof(var.value);
       update = true;

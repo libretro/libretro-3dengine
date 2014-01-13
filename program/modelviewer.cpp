@@ -838,21 +838,21 @@ static void modelviewer_context_reset(void)
 
 static void modelviewer_update_variables(retro_environment_t environ_cb)
 {
-   (void)environ_cb;
-#if 0
    struct retro_variable var;
 
    var.key = "3dengine-modelviewer-discard-hack";
    var.value = NULL;
 
-   if (environ_cb(RETRO_ENVIRONMENT_GET_VARIABLE, &var))
+   if (environ_cb(RETRO_ENVIRONMENT_GET_VARIABLE, &var) && var.value)
    {
       if (strcmp(var.value, "disabled") == 0)
          discard_hack_enable = false;
       else if (strcmp(var.value, "enabled") == 0)
          discard_hack_enable = true;
+
+      if (!first_init)
+         modelviewer_context_reset();
    }
-#endif
 }
 
 

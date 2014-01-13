@@ -134,6 +134,7 @@ void retro_set_environment(retro_environment_t cb)
                            "3dengine-location-enable",
                            "Location enable; disabled|enabled"
                         },
+                  { "3dengine-modelviewer-discard-hack", "Discard hack enable; disabled|enabled" },
       { NULL, NULL },
    };
 
