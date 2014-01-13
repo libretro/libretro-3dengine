@@ -34,6 +34,7 @@
 #include "glm/gtc/matrix_transform.hpp"
 #include "program.h"
 
+retro_position_t previous_location;
 retro_position_t current_location;
 
 static bool location_enable = false;
@@ -220,9 +221,16 @@ void retro_run(void)
 
    if (location_enable && location_cb.get_position)
    {
-      if (location_cb.get_position(&current_location.latitude, &current_location.longitude, &current_location.horizontal_accuracy,
-               &current_location.vertical_accuracy))
+      double lat, lon, hacc, vacc;
+      if (location_cb.get_position(&lat, &lon, &hacc, &vacc))
       {
+         previous_location = current_location;
+
+         current_location.latitude = lat;
+         current_location.longitude = lon;
+         current_location.horizontal_accuracy = hacc;
+         current_location.vertical_accuracy = vacc;
+
          if (display_position)
          {
             struct retro_message msg; 
