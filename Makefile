@@ -20,7 +20,7 @@ PKG_CONFIG = pkg-config
 
 TARGET_NAME := 3dengine
 
-INCFLAGS += -I. -Iutils
+INCFLAGS += -I. -Iutils -Ihelpers
 
 ifneq (,$(findstring unix,$(platform)))
    TARGET := $(TARGET_NAME)_libretro.so
@@ -114,10 +114,11 @@ else
 endif
 
 ENGINE_OBJS  := engine/mesh.o engine/texture.o engine/object.o engine/shader.o
+HELPER_OBJS  := helpers/collision_detection.o
 UTIL_OBJS    := utils/cjson.o utils/rpng.o utils/base64.o
 PROGRAM_OBJS := program/instancingviewer.o program/modelviewer.o
 
-OBJECTS := libretro.o glsym.o $(ENGINE_OBJS) $(PROGRAM_OBJS) $(UTIL_OBJS)
+OBJECTS := libretro.o glsym.o $(ENGINE_OBJS) $(HELPER_OBJS) $(PROGRAM_OBJS) $(UTIL_OBJS)
 CXXFLAGS += -Wall $(fpic)
 CFLAGS += -Wall $(fpic) $(INCFLAGS)
 CXXFLAGS += $(INCFLAGS)
