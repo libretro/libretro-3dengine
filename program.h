@@ -23,10 +23,10 @@ extern bool location_camera_control_enable;
 
 typedef struct
 {
-   double latitude;
-   double longitude;
-   double horizontal_accuracy;
-   double vertical_accuracy;
+   float latitude;
+   float longitude;
+   float horizontal_accuracy;
+   float vertical_accuracy;
 } retro_position_t;
 
 extern retro_position_t previous_location;
