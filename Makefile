@@ -114,7 +114,7 @@ else
 endif
 
 ENGINE_OBJS  := engine/mesh.o engine/texture.o engine/object.o engine/shader.o
-HELPER_OBJS  := helpers/collision_detection.o
+HELPER_OBJS  := helpers/collision_detection.o helpers/location_math.o
 UTIL_OBJS    := utils/cjson.o utils/rpng.o utils/base64.o
 PROGRAM_OBJS := program/instancingviewer.o program/modelviewer.o
 
