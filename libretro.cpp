@@ -37,6 +37,7 @@
 struct retro_hw_render_callback hw_render;
 static struct retro_camera_callback camera_cb;
 retro_log_printf_t log_cb;
+struct retro_location_callback location_cb;
 retro_video_refresh_t video_cb;
 static retro_audio_sample_t audio_cb;
 static retro_audio_sample_batch_t audio_batch_cb;
@@ -124,8 +125,15 @@ void retro_set_environment(retro_environment_t cb)
          "3dengine-cube-stride",
          "Cube stride; 2.0|3.0|4.0|5.0|6.0|7.0|8.0" },
                         {
+         "3dengine-camera-enable",
+         "Camera enable; disabled|enabled" },
+                        {
          "3dengine-camera-type",
          "Camera FB Type; texture|raw framebuffer" },
+                        {
+                           "3dengine-location-enable",
+                           "Location enable; disabled|enabled"
+                        },
       { NULL, NULL },
    };
 
@@ -301,7 +309,8 @@ static void camera_raw_fb_callback(const uint32_t *buffer, unsigned width, unsig
 
 static void camera_initialized(void)
 {
-   camera_cb.start();
+   if (camera_cb.start)
+      camera_cb.start();
 }
 
 static void context_reset(void)
@@ -312,8 +321,22 @@ static void context_reset(void)
 
 char retro_path_info[1024];
 
+static void location_initialized(void)
+{
+   if (location_cb.start)
+      location_cb.start();
+}
+
+static void location_deinitialized(void)
+{
+   if (location_cb.stop)
+      location_cb.stop();
+}
+
 bool retro_load_game(const struct retro_game_info *info)
 {
+   retro_variable var;
+
    strcpy(retro_path_info, info->path);
    if (strstr(info->path, ".obj") || strstr(info->path, ".mtl"))
       engine_program_cb = &engine_program_modelviewer;
@@ -321,6 +344,20 @@ bool retro_load_game(const struct retro_game_info *info)
       engine_program_cb = &engine_program_instancingviewer;
 
    update_variables();
+
+   var.key = "3dengine-location-enable";
+   var.value = NULL;
+
+   if (environ_cb(RETRO_ENVIRONMENT_GET_VARIABLE, &var) && var.value)
+   {
+      if (!strcmp(var.value, "enabled"))
+      {
+         location_cb.initialized = location_initialized;
+         location_cb.deinitialized = location_deinitialized;
+         environ_cb(RETRO_ENVIRONMENT_GET_LOCATION_INTERFACE, &location_cb);
+      }
+   }
+
    memset(&camera_cb, 0, sizeof(camera_cb));
 
    enum retro_pixel_format fmt = RETRO_PIXEL_FORMAT_XRGB8888;
@@ -331,27 +368,39 @@ bool retro_load_game(const struct retro_game_info *info)
       return false;
    }
 
-   struct retro_variable camvar = { "3dengine-camera-type" };
-   if (environ_cb(RETRO_ENVIRONMENT_GET_VARIABLE, &camvar) && camvar.value)
-   {
-      if (!strcmp(camvar.value, "texture"))
-      {
-         camera_cb.caps = (1 << RETRO_CAMERA_BUFFER_OPENGL_TEXTURE);
-         camera_cb.frame_opengl_texture = camera_gl_callback;
-      }
-      else
-      {
-         camera_cb.caps = (1 << RETRO_CAMERA_BUFFER_RAW_FRAMEBUFFER);
-         camera_cb.frame_raw_framebuffer = camera_raw_fb_callback;
-      }
-   }
-   camera_cb.initialized = camera_initialized;
+   var.key = "3dengine-camera-enable";
+   var.value = NULL;
 
-   if (!environ_cb(RETRO_ENVIRONMENT_GET_CAMERA_INTERFACE, &camera_cb))
+   if (environ_cb(RETRO_ENVIRONMENT_GET_VARIABLE, &var) && var.value)
    {
-      if (log_cb)
-         log_cb(RETRO_LOG_ERROR, "camera is not supported.\n");
-      return false;
+      if (!strcmp(var.value, "enabled"))
+      {
+         var.key = "3dengine-camera-type";
+         var.value = NULL;
+
+         if (environ_cb(RETRO_ENVIRONMENT_GET_VARIABLE, &var) && var.value)
+         {
+            if (!strcmp(var.value, "texture"))
+            {
+               camera_cb.caps = (1 << RETRO_CAMERA_BUFFER_OPENGL_TEXTURE);
+               camera_cb.frame_opengl_texture = camera_gl_callback;
+            }
+            else
+            {
+               camera_cb.caps = (1 << RETRO_CAMERA_BUFFER_RAW_FRAMEBUFFER);
+               camera_cb.frame_raw_framebuffer = camera_raw_fb_callback;
+            }
+         }
+
+         camera_cb.initialized = camera_initialized;
+
+         if (!environ_cb(RETRO_ENVIRONMENT_GET_CAMERA_INTERFACE, &camera_cb))
+         {
+            if (log_cb)
+               log_cb(RETRO_LOG_ERROR, "camera is not supported.\n");
+            return false;
+         }
+      }
    }
 
 #ifdef GLES
@@ -365,7 +414,7 @@ bool retro_load_game(const struct retro_game_info *info)
       return false;
 
 #ifdef GLES
-   if (camera_cb.caps & (1 << RETRO_CAMERA_BUFFER_RAW_FRAMEBUFFER) && !gl_query_extension("BGRA8888"))
+   if (camera_cb && camera_cb.caps & (1 << RETRO_CAMERA_BUFFER_RAW_FRAMEBUFFER) && !gl_query_extension("BGRA8888"))
    {
       if (log_cb)
          log_cb(RETRO_LOG_ERROR, "no BGRA8888 support for raw framebuffer, exiting...\n");
