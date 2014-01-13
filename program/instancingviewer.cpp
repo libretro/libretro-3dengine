@@ -1,6 +1,8 @@
 #include "libretro.h"
 #include "program.h"
 
+#include "location_math.hpp"
+
 #include <vector>
 
 #define CUBE_VERTS 36
@@ -281,6 +283,15 @@ static vec3 instancingviewer_check_input(void)
    vec3 look_dir_side = vec3(look_rot_x * vec4(1, 0, 0, 0));
 
    mat3 s = mat3(scale(mat4(1.0), vec3(0.25, 0.25, 0.25)));
+
+   if (location_camera_control_enable)
+   {
+      if (loc_float_greater_than(current_location.longitude, previous_location.longitude))
+         player_pos += s * look_dir;
+      else if (loc_float_lesser_than(current_location.longitude, previous_location.longitude))
+         player_pos -= s * look_dir;
+   }
+
    if (input_state_cb(0, RETRO_DEVICE_JOYPAD, 0, RETRO_DEVICE_ID_JOYPAD_UP))
       player_pos += s * look_dir;
    if (input_state_cb(0, RETRO_DEVICE_JOYPAD, 0, RETRO_DEVICE_ID_JOYPAD_DOWN))
@@ -347,6 +358,7 @@ static vec3 instancingviewer_check_input(void)
             ambient_light_b += 0.01;
       }
    }
+
 
    //check_collision_cube();
 

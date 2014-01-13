@@ -37,6 +37,7 @@
 retro_position_t previous_location;
 retro_position_t current_location;
 
+bool location_camera_control_enable = false;
 static bool location_enable = false;
 static bool camera_enable = false;
 struct retro_hw_render_callback hw_render;
@@ -141,6 +142,10 @@ void retro_set_environment(retro_environment_t cb)
                            "3dengine-location-enable",
                            "Location enable; disabled|enabled"
                         },
+                        {
+                           "3dengine-location-camera-control-enable",
+                           "Location camera control; disabled|enabled"
+                        },
                   { "3dengine-modelviewer-discard-hack", "Discard hack enable; disabled|enabled" },
                   { "3dengine-location-display-position", "Location position OSD; disabled|enabled" },
       { NULL, NULL },
@@ -207,6 +212,17 @@ static void update_variables(void)
          display_position = false;
       else if (strcmp(var.value, "enabled") == 0)
          display_position = true;
+   }
+
+   var.key = "3dengine-location-camera-control-enable";
+   var.value = NULL;
+
+   if (environ_cb(RETRO_ENVIRONMENT_GET_VARIABLE, &var) && var.value)
+   {
+      if (strcmp(var.value, "disabled") == 0)
+         location_camera_control_enable = false;
+      else if (strcmp(var.value, "enabled") == 0)
+         location_camera_control_enable = true;
    }
 
    if (engine_program_cb && engine_program_cb->update_variables)

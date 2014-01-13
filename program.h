@@ -17,6 +17,8 @@ extern unsigned engine_height;
 extern GLuint g_texture_target;
 extern GLuint tex;
 
+extern bool location_camera_control_enable;
+
 #define ARRAY_SIZE(a) (sizeof(a) / sizeof((a)[0]))
 
 typedef struct
@@ -26,6 +28,9 @@ typedef struct
    double horizontal_accuracy;
    double vertical_accuracy;
 } retro_position_t;
+
+extern retro_position_t previous_location;
+extern retro_position_t current_location;
 
 typedef struct engine_program
 {
