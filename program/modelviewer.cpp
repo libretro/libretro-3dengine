@@ -271,7 +271,7 @@ static inline bool inside_triangle(const Triangle& tri, const vec3& pos)
    return true;
 }
 
-static const float twiddle_factor = -0.5f;
+#define TWIDDLE_FACTOR (-0.5f)
 
 // Here be dragons. 2-3 pages of mathematical derivations.
 static inline float point_crash_time(const vec3& pos, const vec3& v, const vec3& edge)
@@ -289,11 +289,11 @@ static inline float point_crash_time(const vec3& pos, const vec3& v, const vec3&
    float d_sqrt = std::sqrt(d);
    float sol0 = (-B + d_sqrt) / (2.0f * A);
    float sol1 = (-B - d_sqrt) / (2.0f * A);
-   if (sol0 >= twiddle_factor && sol1 >= twiddle_factor)
+   if (sol0 >= TWIDDLE_FACTOR && sol1 >= TWIDDLE_FACTOR)
       return std::min(sol0, sol1);
-   else if (sol0 >= twiddle_factor && sol1 < twiddle_factor)
+   else if (sol0 >= TWIDDLE_FACTOR && sol1 < TWIDDLE_FACTOR)
       return sol0;
-   else if (sol0 < twiddle_factor && sol1 >= twiddle_factor)
+   else if (sol0 < TWIDDLE_FACTOR && sol1 >= TWIDDLE_FACTOR)
       return sol1;
 
    return 10.0f;
@@ -326,11 +326,11 @@ static inline float line_crash_time(const vec3& pos, const vec3& v, const vec3& 
    float sol1 = (-B - D_sqrt) / (2.0f * A);
 
    float solution;
-   if (sol0 >= twiddle_factor && sol1 >= twiddle_factor)
+   if (sol0 >= TWIDDLE_FACTOR && sol1 >= TWIDDLE_FACTOR)
       solution = std::min(sol0, sol1);
-   else if (sol0 >= twiddle_factor && sol1 < twiddle_factor)
+   else if (sol0 >= TWIDDLE_FACTOR && sol1 < TWIDDLE_FACTOR)
       solution = sol0;
-   else if (sol0 < twiddle_factor && sol1 >= twiddle_factor)
+   else if (sol0 < TWIDDLE_FACTOR && sol1 >= TWIDDLE_FACTOR)
       solution = sol1;
    else
       return 10.0f;
