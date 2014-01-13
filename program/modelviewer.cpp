@@ -3,7 +3,8 @@
 #include "../engine/mesh.hpp"
 #include "../engine/texture.hpp"
 #include "../engine/object.hpp"
-#include "../helpers/collision_detection.hpp"
+#include "collision_detection.hpp"
+#include "location_math.hpp"
 
 #include <vector>
 #include <string>
@@ -76,6 +77,14 @@ static vec3 scenewalker_check_input(void)
    if (input_state_cb(0, RETRO_DEVICE_JOYPAD, 0,
             RETRO_DEVICE_ID_JOYPAD_RIGHT))
       analog_rx = run_pressed ? 32767 : 16384;
+
+   if (location_camera_control_enable)
+   {
+      if (loc_float_greater_than(current_location.longitude, previous_location.longitude))
+         analog_y = run_pressed ? -32767 : -16384;
+      else if (loc_float_lesser_than(current_location.longitude, previous_location.longitude))
+         analog_y = run_pressed ? 32767 : 16384;
+   }
 
    if (input_state_cb(0, RETRO_DEVICE_JOYPAD, 0,
             RETRO_DEVICE_ID_JOYPAD_UP))
