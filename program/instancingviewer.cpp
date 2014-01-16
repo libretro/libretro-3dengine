@@ -1,5 +1,6 @@
 #include "libretro.h"
 #include "program.h"
+#include "rpng.h"
 
 #include "location_math.hpp"
 
@@ -9,6 +10,7 @@
 
 static bool first_init = true;
 static std::string texpath;
+extern bool camera_enable;
 
 struct Vertex
 {
@@ -378,6 +380,29 @@ static void print_shader_log(GLuint shader)
    delete[] buffer;
 }
 
+static GLuint load_texture(const char *path)
+{
+   uint8_t *data;
+   unsigned width, height;
+   if (!rpng_load_image_rgba(path, &data, &width, &height))
+   {
+      log_cb(RETRO_LOG_ERROR, "Couldn't load texture: %s\n", path);
+      return 0;
+   }
+
+   GLuint tex;
+   SYM(glGenTextures)(1, &tex);
+   SYM(glBindTexture)(GL_TEXTURE_2D, tex);
+
+   SYM(glTexImage2D)(GL_TEXTURE_2D, 0, GL_RGBA, width, height,
+         0, GL_RGBA, GL_UNSIGNED_BYTE, data);
+   free(data);
+
+   SYM(glTexParameteri)(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+   SYM(glTexParameteri)(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+   return tex;
+}
+
 static void instancingviewer_compile_shaders(void)
 {
    prog = SYM(glCreateProgram)();
@@ -412,6 +437,9 @@ static void instancingviewer_compile_shaders(void)
       log_cb(RETRO_LOG_ERROR, "Program failed to link!\n");
 
    tex = 0;
+
+   if (!camera_enable)
+      tex = load_texture(texpath.c_str());
 }
 
 static void instancingviewer_context_reset(void)

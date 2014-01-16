@@ -39,7 +39,7 @@ retro_position_t current_location;
 
 bool location_camera_control_enable = false;
 static bool location_enable = false;
-static bool camera_enable = false;
+bool camera_enable = false;
 struct retro_hw_render_callback hw_render;
 static struct retro_camera_callback camera_cb;
 retro_log_printf_t log_cb;
