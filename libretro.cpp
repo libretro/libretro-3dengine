@@ -423,6 +423,7 @@ bool retro_load_game(const struct retro_game_info *info)
    {
       if (!strcmp(var.value, "enabled"))
       {
+         environ_cb(RETRO_ENVIRONMENT_GET_SENSOR_INTERFACE, &sensor_cb);
          log_cb(RETRO_LOG_INFO, "Sensor interface found.\n");
          if (sensor_cb.set_sensor_state)
          {
