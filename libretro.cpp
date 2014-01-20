@@ -34,6 +34,8 @@
 #include "glm/gtc/matrix_transform.hpp"
 #include "program.h"
 
+#define FPS 60.0
+
 retro_position_t previous_location;
 retro_position_t current_location;
 
@@ -51,6 +53,7 @@ retro_environment_t environ_cb;
 retro_input_poll_t input_poll_cb;
 retro_input_state_t input_state_cb;
 static const engine_program_t *engine_program_cb;
+static retro_sensor_interface sensor_cb;
 
 static bool display_position;
 
@@ -72,12 +75,21 @@ GLuint g_texture_target = GL_TEXTURE_2D;
 
 void retro_init(void)
 {
+   struct retro_sensor_interface sensor;
    struct retro_log_callback log;
 
    if (environ_cb(RETRO_ENVIRONMENT_GET_LOG_INTERFACE, &log))
       log_cb = log.log;
    else
       log_cb = NULL;
+
+
+   if (environ_cb(RETRO_ENVIRONMENT_GET_SENSOR_INTERFACE, &sensor))
+   {
+      sensor_cb = sensor;
+      if (sensor_cb.set_sensor_state)
+         sensor_cb.set_sensor_state(0, RETRO_SENSOR_ACCELEROMETER_ENABLE, FPS);
+   }
 }
 
 void retro_deinit(void)
@@ -106,7 +118,7 @@ void retro_get_system_info(struct retro_system_info *info)
 
 void retro_get_system_av_info(struct retro_system_av_info *info)
 {
-   info->timing.fps = 60.0;
+   info->timing.fps = FPS;
    info->timing.sample_rate = 30000.0;
 
    info->geometry.base_width  = BASE_WIDTH;

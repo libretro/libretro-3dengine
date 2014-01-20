@@ -257,6 +257,9 @@ static vec3 instancingviewer_check_input(void)
    int analog_rx = input_state_cb(0, RETRO_DEVICE_ANALOG,
          RETRO_DEVICE_INDEX_ANALOG_RIGHT, RETRO_DEVICE_ID_ANALOG_X);
 
+   analog_rx = input_state_cb(0, RETRO_DEVICE_SENSOR_ACCELEROMETER, 0, RETRO_DEVICE_ID_SENSOR_ACCELEROMETER_X);
+   analog_ry = input_state_cb(0, RETRO_DEVICE_SENSOR_ACCELEROMETER, 0, RETRO_DEVICE_ID_SENSOR_ACCELEROMETER_Y);
+
    if (abs(analog_rx) < 10000)
       analog_rx = 0;
    if (abs(analog_ry) < 10000)
