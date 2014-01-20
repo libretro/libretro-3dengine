@@ -1,8 +1,8 @@
 /*
- *  InstancingViewer Camera Tech demo
- *  Copyright (C) 2013 - Hans-Kristian Arntzen
- *  Copyright (C) 2013 - Daniel De Matteis
- *  Copyright (C) 2013 - Michael Lelli
+ *  Libretro 3DEngine
+ *  Copyright (C) 2013-2014 - Hans-Kristian Arntzen
+ *  Copyright (C) 2013-2014 - Daniel De Matteis
+ *  Copyright (C) 2013-2014 - Michael Lelli
  *
  *  InstancingViewer is free software: you can redistribute it and/or modify it under the terms
  *  of the GNU General Public License as published by the Free Software Found-
