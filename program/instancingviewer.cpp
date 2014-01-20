@@ -276,10 +276,13 @@ static vec3 instancingviewer_check_input(void)
 
    if (sensor_enable)
    {
-      analog_rx = input_state_cb(0, RETRO_DEVICE_SENSOR_ACCELEROMETER, 0, RETRO_DEVICE_ID_SENSOR_ACCELEROMETER_X);
-      analog_ry = input_state_cb(0, RETRO_DEVICE_SENSOR_ACCELEROMETER, 0, RETRO_DEVICE_ID_SENSOR_ACCELEROMETER_Y);
-      log_cb(RETRO_LOG_INFO, "Sensor accelerometer X: %d\n", analog_rx);
-      log_cb(RETRO_LOG_INFO, "Sensor accelerometer Y: %d\n", analog_ry);
+      if (sensor_cb.get_sensor_input)
+      {
+         analog_rx = sensor_cb.get_sensor_input(0, RETRO_DEVICE_ID_SENSOR_ACCELEROMETER_X);
+         analog_ry = sensor_cb.get_sensor_input(0, RETRO_DEVICE_ID_SENSOR_ACCELEROMETER_Y);
+         log_cb(RETRO_LOG_INFO, "Sensor accelerometer X: %d\n", analog_rx);
+         log_cb(RETRO_LOG_INFO, "Sensor accelerometer Y: %d\n", analog_ry);
+      }
    }
 
    if (abs(analog_rx) < 10000)
