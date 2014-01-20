@@ -39,6 +39,7 @@
 retro_position_t previous_location;
 retro_position_t current_location;
 
+bool sensor_initialized = false;
 bool sensor_enable = false;
 bool location_camera_control_enable = false;
 static bool location_enable = false;
@@ -83,7 +84,7 @@ void retro_init(void)
    else
       log_cb = NULL;
 
-
+   environ_cb(RETRO_ENVIRONMENT_GET_SENSOR_INTERFACE, &sensor_cb);
 }
 
 void retro_deinit(void)
@@ -421,14 +422,31 @@ bool retro_load_game(const struct retro_game_info *info)
 
    if (environ_cb(RETRO_ENVIRONMENT_GET_VARIABLE, &var) && var.value)
    {
+
       if (!strcmp(var.value, "enabled"))
       {
-         environ_cb(RETRO_ENVIRONMENT_GET_SENSOR_INTERFACE, &sensor_cb);
-         log_cb(RETRO_LOG_INFO, "Sensor interface found.\n");
+         if (sensor_initialized)
+            return true;
+
+         log_cb(RETRO_LOG_INFO, "Sensor interface found, enabling...\n");
          if (sensor_cb.set_sensor_state)
          {
             sensor_cb.set_sensor_state(0, RETRO_SENSOR_ACCELEROMETER_ENABLE, FPS);
             sensor_enable = true;
+         }
+
+         sensor_initialized = true;
+      }
+      if (!strcmp(var.value, "disabled"))
+      {
+         if (sensor_initialized)
+            return true;
+
+         log_cb(RETRO_LOG_INFO, "Sensor interface found, disabling...\n");
+         if (sensor_cb.set_sensor_state)
+         {
+            sensor_cb.set_sensor_state(0, RETRO_SENSOR_ACCELEROMETER_DISABLE, FPS);
+            sensor_enable = false;
          }
       }
    }
