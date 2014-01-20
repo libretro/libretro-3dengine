@@ -45,7 +45,9 @@ using namespace glm;
 
 static bool update;
 static GLuint prog;
+static GLuint background_prog;
 static GLuint vbo;
+static GLuint background_vbo;
 static float cube_stride = 4.0f;
 static unsigned cube_size = 1;
 
@@ -82,11 +84,11 @@ static const char *vertex_shader[] = {
 
 static const char *fragment_shader[] = {
 #ifdef ANDROID
-   "#extension GL_OES_EGL_image_external : require\n"
+   "#extension GL_OES_EGL_image_external : require\n",
 #endif
-#ifdef GLES
+   "#ifdef GL_ES\n",
    "precision mediump float; \n",
-#endif
+   "#endif\n",
    "varying vec3 normal;",
    "varying vec4 model_pos;",
    "varying vec2 tex_coord;",
@@ -103,6 +105,45 @@ static const char *fragment_shader[] = {
    "  float dist_mod = 100.0 * inversesqrt(dot(diff, diff));",
    "  gl_FragColor = texture2D(uTexture, tex_coord) * (ambient_light + dist_mod * smoothstep(0.0, 1.0, dot(normalize(diff), normal)));",
    "}",
+};
+
+static const char *background_vertex_shader[] = {
+   "attribute vec2 TexCoord;\n",
+   "attribute vec2 VertexCoord;\n",
+   "varying vec2 tex_coord;\n",
+   "void main() {\n",
+   "   gl_Position = vec4(VertexCoord, 1.0, 1.0);\n",
+   "   tex_coord = TexCoord;\n",
+   "}",
+};
+
+static const char *background_fragment_shader[] = {
+#ifdef ANDROID
+   "#extension GL_OES_EGL_image_external : require\n",
+#endif
+   "#ifdef GL_ES\n",
+   "precision mediump float;\n",
+   "#endif\n",
+#ifdef ANDROID
+   "uniform samplerExternalOES Texture;",
+#else
+   "uniform sampler2D Texture;\n",
+#endif
+   "varying vec2 tex_coord;\n",
+   "void main() {\n",
+   "   gl_FragColor = texture2D(Texture, tex_coord);\n",
+   "}",
+};
+
+static const GLfloat background_data[] = {
+   -1, -1, // vertex
+    0,  0, // tex
+    1, -1, // vertex
+    1,  0, // tex
+   -1,  1, // vertex
+    0,  1, // tex
+    1,  1, // vertex
+    1,  1, // tex
 };
 
 static const Vertex vertex_data[] = {
@@ -464,6 +505,51 @@ static void instancingviewer_compile_shaders(void)
    if (!status && log_cb)
       log_cb(RETRO_LOG_ERROR, "Program failed to link!\n");
 
+
+   background_prog = SYM(glCreateProgram)();
+   GLuint background_vert = SYM(glCreateShader)(GL_VERTEX_SHADER);
+   GLuint background_frag = SYM(glCreateShader)(GL_FRAGMENT_SHADER);
+
+   SYM(glShaderSource)(background_vert, ARRAY_SIZE(background_vertex_shader), background_vertex_shader, 0);
+   SYM(glShaderSource)(background_frag, ARRAY_SIZE(background_fragment_shader), background_fragment_shader, 0);
+   SYM(glCompileShader)(background_vert);
+   SYM(glCompileShader)(background_frag);
+
+   SYM(glGetShaderiv)(background_vert, GL_COMPILE_STATUS, &status);
+   if (!status && log_cb)
+   {
+      log_cb(RETRO_LOG_ERROR, "Background vertex shader failed to compile!\n");
+      print_shader_log(background_vert);
+   }
+   SYM(glGetShaderiv)(background_frag, GL_COMPILE_STATUS, &status);
+   if (!status && log_cb)
+   {
+      log_cb(RETRO_LOG_ERROR, "Background fragment shader failed to compile!\n");
+      print_shader_log(background_frag);
+   }
+
+   SYM(glAttachShader)(background_prog, background_vert);
+   SYM(glAttachShader)(background_prog, background_frag);
+   SYM(glLinkProgram)(background_prog);
+
+   SYM(glGetProgramiv)(background_prog, GL_LINK_STATUS, &status);
+   if (!status && log_cb)
+      log_cb(RETRO_LOG_ERROR, "Background program failed to link!\n");
+
+   SYM(glBindBuffer)(GL_ARRAY_BUFFER, background_vbo);
+   int vloc = SYM(glGetAttribLocation)(background_prog, "VertexCoord");
+   SYM(glVertexAttribPointer)(vloc, 2, GL_FLOAT, GL_FALSE, sizeof(GLfloat) * 4, (void*)(0));
+   SYM(glEnableVertexAttribArray)(vloc);
+   int tcloc = SYM(glGetAttribLocation)(background_prog, "TexCoord");
+   SYM(glVertexAttribPointer)(tcloc, 2, GL_FLOAT, GL_FALSE, sizeof(GLfloat) * 4, (void*)(sizeof(GLfloat) * 2));
+   SYM(glEnableVertexAttribArray)(tcloc);
+
+   SYM(glBufferData)(GL_ARRAY_BUFFER, 4 * sizeof(GLfloat) * 4,
+         &background_data[0], GL_STATIC_DRAW);
+   SYM(glBindBuffer)(GL_ARRAY_BUFFER, 0);
+   SYM(glDisableVertexAttribArray)(tcloc);
+   SYM(glDisableVertexAttribArray)(vloc);
+
    tex = 0;
 
    if (!camera_enable)
@@ -479,6 +565,7 @@ static void instancingviewer_context_reset(void)
    GL::init_symbol_map();
 
    SYM(glGenBuffers)(1, &vbo);
+   SYM(glGenBuffers)(1, &background_vbo);
    instancingviewer_compile_shaders();
    update = true;
 }
@@ -522,6 +609,28 @@ static void instancingviewer_run(void)
    SYM(glClearColor)(0.1, 0.1, 0.1, 1.0);
    SYM(glViewport)(0, 0, engine_width, engine_height);
    SYM(glClear)(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
+   SYM(glUseProgram)(background_prog);
+
+   SYM(glDisable)(GL_DEPTH_TEST);
+   SYM(glEnable)(GL_CULL_FACE);
+
+   int texloc = SYM(glGetUniformLocation)(background_prog, "Texture");
+   SYM(glUniform1i)(texloc, 0);
+   SYM(glActiveTexture)(GL_TEXTURE0);
+   SYM(glBindBuffer)(GL_ARRAY_BUFFER, background_vbo);
+   int vloc = SYM(glGetAttribLocation)(background_prog, "VertexCoord");
+   SYM(glVertexAttribPointer)(vloc, 2, GL_FLOAT, GL_FALSE, sizeof(GLfloat) * 4, (void*)(0));
+   SYM(glEnableVertexAttribArray)(vloc);
+   int tcloc = SYM(glGetAttribLocation)(background_prog, "TexCoord");
+   SYM(glVertexAttribPointer)(tcloc, 2, GL_FLOAT, GL_FALSE, sizeof(GLfloat) * 4, (void*)(sizeof(GLfloat) * 2));
+   SYM(glEnableVertexAttribArray)(tcloc);
+
+   SYM(glBindTexture)(g_texture_target, tex);
+
+   SYM(glDrawArrays)(GL_TRIANGLE_STRIP, 0, 4);
+   SYM(glDisableVertexAttribArray)(tcloc);
+   SYM(glDisableVertexAttribArray)(vloc);
 
    SYM(glUseProgram)(prog);
 
