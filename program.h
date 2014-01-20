@@ -18,6 +18,7 @@ extern GLuint g_texture_target;
 extern GLuint tex;
 
 extern bool location_camera_control_enable;
+extern bool sensor_enable;
 
 #define ARRAY_SIZE(a) (sizeof(a) / sizeof((a)[0]))
 

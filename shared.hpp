@@ -37,6 +37,7 @@ namespace std1 = std::tr1;
 #include "libretro.h"
 
 extern retro_log_printf_t log_cb;
+extern struct retro_sensor_interface sensor_cb;
 
 #endif
 

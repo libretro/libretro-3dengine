@@ -39,6 +39,7 @@
 retro_position_t previous_location;
 retro_position_t current_location;
 
+bool sensor_enable = false;
 bool location_camera_control_enable = false;
 static bool location_enable = false;
 bool camera_enable = false;
@@ -53,7 +54,7 @@ retro_environment_t environ_cb;
 retro_input_poll_t input_poll_cb;
 retro_input_state_t input_state_cb;
 static const engine_program_t *engine_program_cb;
-static retro_sensor_interface sensor_cb;
+struct retro_sensor_interface sensor_cb;
 
 static bool display_position;
 
@@ -75,7 +76,6 @@ GLuint g_texture_target = GL_TEXTURE_2D;
 
 void retro_init(void)
 {
-   struct retro_sensor_interface sensor;
    struct retro_log_callback log;
 
    if (environ_cb(RETRO_ENVIRONMENT_GET_LOG_INTERFACE, &log))
@@ -84,12 +84,6 @@ void retro_init(void)
       log_cb = NULL;
 
 
-   if (environ_cb(RETRO_ENVIRONMENT_GET_SENSOR_INTERFACE, &sensor))
-   {
-      sensor_cb = sensor;
-      if (sensor_cb.set_sensor_state)
-         sensor_cb.set_sensor_state(0, RETRO_SENSOR_ACCELEROMETER_ENABLE, FPS);
-   }
 }
 
 void retro_deinit(void)
@@ -150,6 +144,10 @@ void retro_set_environment(retro_environment_t cb)
                         {
          "3dengine-camera-type",
          "Camera FB Type; texture|raw framebuffer" },
+                        {
+                           "3dengine-sensor-enable",
+                           "Sensor enable; disabled|enabled"
+                        },
                         {
                            "3dengine-location-enable",
                            "Location enable; disabled|enabled"
@@ -417,6 +415,22 @@ bool retro_load_game(const struct retro_game_info *info)
       engine_program_cb = &engine_program_instancingviewer;
 
    update_variables();
+
+   var.key = "3dengine-sensor-enable";
+   var.value = NULL;
+
+   if (environ_cb(RETRO_ENVIRONMENT_GET_VARIABLE, &var) && var.value)
+   {
+      if (!strcmp(var.value, "enabled"))
+      {
+         log_cb(RETRO_LOG_INFO, "Sensor interface found.\n");
+         if (sensor_cb.set_sensor_state)
+         {
+            sensor_cb.set_sensor_state(0, RETRO_SENSOR_ACCELEROMETER_ENABLE, FPS);
+            sensor_enable = true;
+         }
+      }
+   }
 
    var.key = "3dengine-location-enable";
    var.value = NULL;
