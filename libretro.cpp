@@ -518,6 +518,8 @@ bool retro_load_game(const struct retro_game_info *info)
 #endif
    hw_render.context_reset = context_reset;
    hw_render.depth = true;
+   if (!camera_enable)
+      hw_render.bottom_left_origin = true;
    if (!environ_cb(RETRO_ENVIRONMENT_SET_HW_RENDER, &hw_render))
       return false;
 
