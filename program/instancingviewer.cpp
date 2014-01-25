@@ -15,9 +15,11 @@
  *  If not, see <http://www.gnu.org/licenses/>.
  */
 
+#include <string.h>
 #include "libretro.h"
 #include "program.h"
 #include "rpng.h"
+#include "rtga.h"
 
 #include "location_math.hpp"
 
@@ -453,10 +455,21 @@ static GLuint load_texture(const char *path)
 {
    uint8_t *data;
    unsigned width, height;
-   if (!rpng_load_image_rgba(path, &data, &width, &height))
+   if (strstr(path, ".png"))
    {
-      log_cb(RETRO_LOG_ERROR, "Couldn't load texture: %s\n", path);
-      return 0;
+      if (!rpng_load_image_rgba(path, &data, &width, &height))
+      {
+         log_cb(RETRO_LOG_ERROR, "Couldn't load texture: %s\n", path);
+         return 0;
+      }
+   }
+   else if (strstr(path, ".tga"))
+   {
+      if (!texture_image_load_tga(path, data, width, height))
+      {
+         log_cb(RETRO_LOG_ERROR, "Couldn't load texture: %s\n", path);
+         return 0;
+      }
    }
 
    GLuint tex;
