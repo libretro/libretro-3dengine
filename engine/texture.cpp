@@ -28,95 +28,11 @@
 #include "gli/gtx/gl_texture2d.hpp"
 #endif
 
+#include "rtga.h"
+
 using namespace std;
 using namespace std1;
 
-static bool texture_image_load_tga(const char *path,
-      uint8_t*& data, unsigned& width, unsigned& height)
-{
-   FILE *file = fopen(path, "rb");
-   if (!file)
-   {
-      if (log_cb)
-         log_cb(RETRO_LOG_ERROR, "Failed to open image: %s.\n", path);
-      return false;
-   }
-
-   fseek(file, 0, SEEK_END);
-   long len = ftell(file);
-   rewind(file);
-
-   uint8_t* buffer = (uint8_t*)malloc(len);
-   if (!buffer)
-   {
-      fclose(file);
-      return false;
-   }
-
-   fread(buffer, 1, len, file);
-   fclose(file);
-
-   if (buffer[2] != 2) // Uncompressed RGB
-   {
-      if (log_cb)
-         log_cb(RETRO_LOG_ERROR, "TGA image is not uncompressed RGB.\n");
-      free(buffer);
-      return false;
-   }
-
-   uint8_t info[6];
-   memcpy(info, buffer + 12, 6);
-
-   width = info[0] + ((unsigned)info[1] * 256);
-   height = info[2] + ((unsigned)info[3] * 256);
-   unsigned bits = info[4];
-
-   if (log_cb)
-      log_cb(RETRO_LOG_INFO, "Loaded TGA: (%ux%u @ %u bpp)\n", width, height, bits);
-
-   unsigned size = width * height * sizeof(uint32_t);
-   data = (uint8_t*)malloc(size);
-   if (!data)
-   {
-      if (log_cb)
-         log_cb(RETRO_LOG_ERROR, "Failed to allocate TGA pixels.\n");
-      free(buffer);
-      return false;
-   }
-
-   const uint8_t *tmp = buffer + 18;
-   if (bits == 32)
-   {
-      for (unsigned i = 0; i < width * height; i++)
-      {
-         data[i * 4 + 2] = tmp[i * 4 + 0];
-         data[i * 4 + 1] = tmp[i * 4 + 1];
-         data[i * 4 + 0] = tmp[i * 4 + 2];
-         data[i * 4 + 3] = tmp[i * 4 + 3];
-      }
-   }
-   else if (bits == 24)
-   {
-      for (unsigned i = 0; i < width * height; i++)
-      {
-         data[i * 4 + 2] = tmp[i * 3 + 0];
-         data[i * 4 + 1] = tmp[i * 3 + 1];
-         data[i * 4 + 0] = tmp[i * 3 + 2];
-         data[i * 4 + 3] = 0xff;
-      }
-   }
-   else
-   {
-      if (log_cb)
-         log_cb(RETRO_LOG_ERROR, "Bit depth of TGA image is wrong. Only 32-bit and 24-bit supported.\n");
-      free(buffer);
-      free(data);
-      return false;
-   }
-
-   free(buffer);
-   return true;
-}
 
 namespace GL
 {
