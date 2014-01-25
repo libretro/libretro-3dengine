@@ -459,7 +459,7 @@ static GLuint load_texture(const char *path)
    {
       if (!rpng_load_image_rgba(path, &data, &width, &height))
       {
-         log_cb(RETRO_LOG_ERROR, "Couldn't load texture: %s\n", path);
+         log_cb(RETRO_LOG_ERROR, "Couldn't load PNG texture: %s\n", path);
          return 0;
       }
    }
@@ -467,7 +467,7 @@ static GLuint load_texture(const char *path)
    {
       if (!texture_image_load_tga(path, data, width, height))
       {
-         log_cb(RETRO_LOG_ERROR, "Couldn't load texture: %s\n", path);
+         log_cb(RETRO_LOG_ERROR, "Couldn't load TGA texture: %s\n", path);
          return 0;
       }
    }
