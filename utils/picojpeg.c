@@ -14,10 +14,6 @@
 // Define PJPG_INLINE to "inline" if your C compiler supports explicit inlining
 #define PJPG_INLINE
 //------------------------------------------------------------------------------
-typedef unsigned char   uint8;
-typedef unsigned short  uint16;
-typedef signed char     int8;
-typedef signed short    int16;
 //------------------------------------------------------------------------------
 #if PJPG_RIGHT_SHIFT_IS_ALWAYS_UNSIGNED
 static int16 replicateSignBit16(int8 n)

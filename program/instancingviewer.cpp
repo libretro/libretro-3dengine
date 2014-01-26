@@ -474,7 +474,11 @@ static GLuint load_texture(const char *path)
    }
    else if (strstr(path, ".jpeg") || strstr(path, ".jpg"))
    {
-      if (!texture_image_load_jpeg(path, &data, &width, &height))
+      pjpeg_scan_type_t scan;
+      int comps, reduce;
+      reduce = 0;
+      data = (uint8_t*)pjpeg_load_from_file(path, &width, &height, &comps, &scan, reduce);
+      if (!data)
       {
          log_cb(RETRO_LOG_ERROR, "Couldn't load JPEG texture: %s\n", path);
          return 0;

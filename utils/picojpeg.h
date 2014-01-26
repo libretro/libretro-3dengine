@@ -8,6 +8,11 @@
 extern "C" {
 #endif
 
+typedef unsigned char   uint8;
+typedef unsigned short  uint16;
+typedef signed char     int8;
+typedef signed short    int16;
+
 #include <stdint.h>
 #include "boolean.h"
 
@@ -125,7 +130,7 @@ unsigned char pjpeg_decode_init(pjpeg_image_info_t *pInfo, pjpeg_need_bytes_call
 // Not thread safe.
 unsigned char pjpeg_decode_mcu(void);
 
-bool texture_image_load_jpeg(const char *filename, uint8_t **data, unsigned *width, unsigned *height);
+uint8 *pjpeg_load_from_file(const char *pFilename, unsigned *x, unsigned *y, int *comps, pjpeg_scan_type_t *pScan_type, int reduce);
 
 #ifdef __cplusplus
 }
