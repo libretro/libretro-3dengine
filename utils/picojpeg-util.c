@@ -27,7 +27,7 @@ unsigned char pjpeg_need_bytes_callback(unsigned char* pBuf, unsigned char buf_s
 
 bool texture_image_load_jpeg(const char *filename, uint8_t **data)
 {
-   int status, mcu_x, mcu_y;
+   int status, mcu_x, mcu_y, x, y, by, bx;
    unsigned int row_pitch;
    pjpeg_image_info_t imageInfo;
 
@@ -69,11 +69,11 @@ bool texture_image_load_jpeg(const char *filename, uint8_t **data)
       // Copy MCU's pixel blocks into the destination bitmap.
       uint8_t *pDst_row = *data + (mcu_y * imageInfo.m_MCUHeight) * row_pitch + (mcu_x * imageInfo.m_MCUWidth * imageInfo.m_comps);
 
-      for (int y = 0; y < imageInfo.m_MCUHeight; y += 8)
+      for (y = 0; y < imageInfo.m_MCUHeight; y += 8)
       {
          const int by_limit = min(8, imageInfo.m_height - (mcu_y * imageInfo.m_MCUHeight + y));
 
-         for (int x = 0; x < imageInfo.m_MCUWidth; x += 8)
+         for (x = 0; x < imageInfo.m_MCUWidth; x += 8)
          {
             uint8_t *pDst_block = pDst_row + x * imageInfo.m_comps;
 
@@ -86,11 +86,11 @@ bool texture_image_load_jpeg(const char *filename, uint8_t **data)
 
             if (imageInfo.m_scanType == PJPG_GRAYSCALE)
             {
-               for (int by = 0; by < by_limit; by++)
+               for (by = 0; by < by_limit; by++)
                {
                   uint8_t *pDst = pDst_block;
 
-                  for (int bx = 0; bx < bx_limit; bx++)
+                  for (bx = 0; bx < bx_limit; bx++)
                      *pDst++ = *pSrcR++;
 
                   pSrcR += (8 - bx_limit);
@@ -100,11 +100,11 @@ bool texture_image_load_jpeg(const char *filename, uint8_t **data)
             }
             else
             {
-               for (int by = 0; by < by_limit; by++)
+               for (by = 0; by < by_limit; by++)
                {
                   uint8_t *pDst = pDst_block;
 
-                  for (int bx = 0; bx < bx_limit; bx++)
+                  for (bx = 0; bx < bx_limit; bx++)
                   {
                      pDst[0] = *pSrcR++;
                      pDst[1] = *pSrcG++;
