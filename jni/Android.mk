@@ -18,7 +18,7 @@ LOCAL_CFLAGS += -DANDROID_MIPS
 endif
 
 INCFLAGS := -I../ -I../utils -I../helpers
-LOCAL_SRC_FILES += $(wildcard ../*.cpp) $(wildcard ../engine/*.cpp) $(wildcard ../helpers/*.cpp) $(wildcard ../program/*.cpp) $(wildcard ../*.c) $(wildcard ../utils/*.c)
+LOCAL_SRC_FILES += $(wildcard ../*.cpp) $(wildcard ../engine/*.cpp) $(wildcard ../helpers/*.cpp) $(wildcard ../program/*.cpp) $(wildcard ../*.c) $(wildcard ../utils/*.c) $(wildcard ../utils/*.cpp)
 LOCAL_CXXFLAGS += -O2 -Wall -ffast-math -fexceptions -DGLES -DANDROID $(INCFLAGS)
 LOCAL_CFLAGS += $(INCFLAGS)
 LOCAL_LDLIBS += -lz -llog -lGLESv2

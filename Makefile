@@ -115,7 +115,7 @@ endif
 
 ENGINE_OBJS  := engine/mesh.o engine/texture.o engine/object.o engine/shader.o
 HELPER_OBJS  := helpers/collision_detection.o helpers/location_math.o
-UTIL_OBJS    := utils/cjson.o utils/rpng.o utils/rtga.o utils/base64.o
+UTIL_OBJS    := utils/cjson.o utils/rpng.o utils/rtga.o utils/base64.o utils/picojpeg.o
 PROGRAM_OBJS := program/instancingviewer.o program/modelviewer.o
 
 OBJECTS := libretro.o glsym.o $(ENGINE_OBJS) $(HELPER_OBJS) $(PROGRAM_OBJS) $(UTIL_OBJS)
