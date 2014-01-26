@@ -25,13 +25,15 @@ unsigned char pjpeg_need_bytes_callback(unsigned char* pBuf, unsigned char buf_s
    return 0;
 }
 
-bool texture_image_load_jpeg(const char *filename, uint8_t **data)
+bool texture_image_load_jpeg(const char *filename, uint8_t **data, unsigned *width, unsigned *height)
 {
    int status, mcu_x, mcu_y, x, y, by, bx;
    unsigned int row_pitch;
    pjpeg_image_info_t imageInfo;
 
    *data = NULL;
+   *width = 0;
+   *height = 0;
 
    jpegfile = fopen(filename,"rb");
    fseek(jpegfile, 0, SEEK_END);
@@ -43,6 +45,8 @@ bool texture_image_load_jpeg(const char *filename, uint8_t **data)
    mcu_x = 0;
    mcu_y = 0;
    *data = (uint8_t*)malloc(row_pitch *imageInfo.m_height * sizeof(uint32_t));
+   *width = imageInfo.m_width;
+   *height = imageInfo.m_height;
 
    for ( ; ; )
    {

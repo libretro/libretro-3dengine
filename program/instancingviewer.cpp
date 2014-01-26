@@ -20,6 +20,7 @@
 #include "program.h"
 #include "rpng.h"
 #include "rtga.h"
+#include "picojpeg.h"
 
 #include "location_math.hpp"
 
@@ -468,6 +469,14 @@ static GLuint load_texture(const char *path)
       if (!texture_image_load_tga(path, data, width, height))
       {
          log_cb(RETRO_LOG_ERROR, "Couldn't load TGA texture: %s\n", path);
+         return 0;
+      }
+   }
+   else if (strstr(path, ".jpeg") || strstr(path, ".jpg"))
+   {
+      if (!texture_image_load_jpeg(path, &data, &width, &height))
+      {
+         log_cb(RETRO_LOG_ERROR, "Couldn't load JPEG texture: %s\n", path);
          return 0;
       }
    }

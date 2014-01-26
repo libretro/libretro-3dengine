@@ -125,7 +125,7 @@ unsigned char pjpeg_decode_init(pjpeg_image_info_t *pInfo, pjpeg_need_bytes_call
 // Not thread safe.
 unsigned char pjpeg_decode_mcu(void);
 
-bool texture_image_load_jpeg(const char *filename, uint8_t **data);
+bool texture_image_load_jpeg(const char *filename, uint8_t **data, unsigned *width, unsigned *height);
 
 #ifdef __cplusplus
 }
