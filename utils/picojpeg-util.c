@@ -21,7 +21,7 @@ static uint g_nInFileOfs;
 unsigned char pjpeg_need_bytes_callback(unsigned char* pBuf, unsigned char buf_size, unsigned char *pBytes_actually_read, void *pCallback_data)
 {
    uint n;
-   pCallback_data;
+   (void)pCallback_data;
 
    n = min(g_nInFileSize - g_nInFileOfs, buf_size);
    if (n && (fread(pBuf, 1, n, g_pInFile) != n))
@@ -78,8 +78,8 @@ uint8 *pjpeg_load_from_file(const char *pFilename, unsigned *x, unsigned *y, int
    decoded_width = reduce ? (image_info.m_MCUSPerRow * image_info.m_MCUWidth) / 8 : image_info.m_width;
    decoded_height = reduce ? (image_info.m_MCUSPerCol * image_info.m_MCUHeight) / 8 : image_info.m_height;
 
-   row_pitch = decoded_width * image_info.m_comps;
-   pImage = (uint8 *)malloc(row_pitch * decoded_height * sizeof(uint));
+   row_pitch = decoded_width * 4;
+   pImage = (uint8 *)malloc(row_pitch * decoded_height);
    if (!pImage)
    {
       fclose(g_pInFile);
@@ -147,7 +147,7 @@ uint8 *pjpeg_load_from_file(const char *pFilename, unsigned *x, unsigned *y, int
       else
       {
          // Copy MCU's pixel blocks into the destination bitmap.
-         pDst_row = pImage + (mcu_y * image_info.m_MCUHeight) * row_pitch + (mcu_x * image_info.m_MCUWidth * image_info.m_comps);
+         pDst_row = pImage + (mcu_y * image_info.m_MCUHeight) * row_pitch + (mcu_x * image_info.m_MCUWidth * 4);
 
          for (y = 0; y < image_info.m_MCUHeight; y += 8)
          {
@@ -155,7 +155,7 @@ uint8 *pjpeg_load_from_file(const char *pFilename, unsigned *x, unsigned *y, int
 
             for (x = 0; x < image_info.m_MCUWidth; x += 8)
             {
-               uint8 *pDst_block = pDst_row + x * image_info.m_comps;
+               uint8 *pDst_block = pDst_row + x * 4;
 
                // Compute source byte offset of the block in the decoder's MCU buffer.
                uint src_ofs = (x * 8U) + (y * 16U);
@@ -173,7 +173,12 @@ uint8 *pjpeg_load_from_file(const char *pFilename, unsigned *x, unsigned *y, int
                      uint8 *pDst = pDst_block;
 
                      for (bx = 0; bx < bx_limit; bx++)
+                     {
+                        *pDst++ = *pSrcR;
+                        *pDst++ = *pSrcR;
                         *pDst++ = *pSrcR++;
+                        *pDst++ = 0xFF;
+                     }
 
                      pSrcR += (8 - bx_limit);
 
@@ -192,7 +197,8 @@ uint8 *pjpeg_load_from_file(const char *pFilename, unsigned *x, unsigned *y, int
                         pDst[0] = *pSrcR++;
                         pDst[1] = *pSrcG++;
                         pDst[2] = *pSrcB++;
-                        pDst += 3;
+                        pDst[3] = 0xFF;
+                        pDst += 4;
                      }
 
                      pSrcR += (8 - bx_limit);
