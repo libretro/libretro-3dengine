@@ -11,7 +11,6 @@
 #define min(a,b)    (((a) < (b)) ? (a) : (b))
 #endif
 
-typedef unsigned char uint8;
 typedef unsigned int uint;
 
 static FILE *g_pInFile;
