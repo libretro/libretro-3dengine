@@ -33,13 +33,17 @@ else
 endif
 else ifneq (,$(findstring osx,$(platform)))
    TARGET := $(TARGET_NAME)_libretro.dylib
-   fpic := -fPIC -mmacosx-version-min=10.6
+   fpic := -fPIC
    SHARED := -dynamiclib
    GL_LIB := -framework OpenGL
    DEFINES += -DOSX
    CFLAGS += $(DEFINES)
    CXXFLAGS += $(DEFINES)
    INCFLAGS += -Iinclude/compat
+OSXVER = `sw_vers -productVersion | cut -c 4`
+ifneq ($(OSXVER),9)
+   fpic += -fPIC -mmacosx-version-min=10.5
+endif
 else ifneq (,$(findstring armv,$(platform)))
    CC = gcc
    CXX = g++
@@ -74,12 +78,19 @@ else ifeq ($(platform), ios)
    GLES := 1
    SHARED := -dynamiclib
    GL_LIB := -framework OpenGLES
-   CC = clang -arch armv7 -isysroot $(IOSSDK) -miphoneos-version-min=5.0
-   CXX = clang++ -arch armv7 -isysroot $(IOSSDK) -miphoneos-version-min=5.0
+   CC = clang -arch armv7 -isysroot $(IOSSDK)
+   CXX = clang++ -arch armv7 -isysroot $(IOSSDK)
    DEFINES += -DIOS
-   CFLAGS += $(DEFINES) -miphoneos-version-min=5.0
-   CXXFLAGS += $(DEFINES) -miphoneos-version-min=5.0
+   CFLAGS += $(DEFINES)
+   CXXFLAGS += $(DEFINES)
    INCFLAGS += -Iinclude/compat
+OSXVER = `sw_vers -productVersion | cut -c 4`
+ifneq ($(OSXVER),9)
+   CC +=  -miphoneos-version-min=5.0
+   CXX +=  -miphoneos-version-min=5.0
+   CFLAGS += -miphoneos-version-min=5.0
+   CXXFLAGS += -miphoneos-version-min=5.0
+endif
 else ifeq ($(platform), qnx)
    TARGET := $(TARGET_NAME)_libretro_qnx.so
    fpic := -fPIC
