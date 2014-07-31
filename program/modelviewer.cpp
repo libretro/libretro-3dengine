@@ -24,7 +24,7 @@
 #include "location_math.hpp"
 
 #include <vector>
-#include <string>
+#include <string.h>
 
 using namespace glm;
 
