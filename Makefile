@@ -40,8 +40,9 @@ else ifneq (,$(findstring osx,$(platform)))
    CFLAGS += $(DEFINES)
    CXXFLAGS += $(DEFINES)
    INCFLAGS += -Iinclude/compat
-OSXVER = `sw_vers -productVersion | cut -c 4`
-ifneq ($(OSXVER),9)
+   OSXVER = `sw_vers -productVersion | cut -d. -f 2`
+   OSX_LT_MAVERICKS = `(( $(OSXVER) <= 9)) && echo "YES"`
+ifeq ($(OSX_LT_MAVERICKS),"YES")
    fpic += -fPIC -mmacosx-version-min=10.5
 endif
 else ifneq (,$(findstring armv,$(platform)))
@@ -78,14 +79,20 @@ else ifeq ($(platform), ios)
    GLES := 1
    SHARED := -dynamiclib
    GL_LIB := -framework OpenGLES
+
+ifeq ($(IOSSDK),)
+   IOSSDK := $(shell xcrun -sdk iphoneos -show-sdk-path)
+endif
+
    CC = clang -arch armv7 -isysroot $(IOSSDK)
    CXX = clang++ -arch armv7 -isysroot $(IOSSDK)
    DEFINES += -DIOS
    CFLAGS += $(DEFINES)
    CXXFLAGS += $(DEFINES)
    INCFLAGS += -Iinclude/compat
-OSXVER = `sw_vers -productVersion | cut -c 4`
-ifneq ($(OSXVER),9)
+   OSXVER = `sw_vers -productVersion | cut -d. -f 2`
+   OSX_LT_MAVERICKS = `(( $(OSXVER) <= 9)) && echo "YES"`
+ifeq ($(OSX_LT_MAVERICKS),"YES")
    CC +=  -miphoneos-version-min=5.0
    CXX +=  -miphoneos-version-min=5.0
    CFLAGS += -miphoneos-version-min=5.0
