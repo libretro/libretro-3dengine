@@ -1,0 +1,10 @@
+Package: com.libretro.3dengine
+Name: 3DEngine
+Depends: 
+Version: 0.0.1
+Architecture: iphoneos-arm
+Description: Libretro iOS core of 3DEngine
+Maintainer: libretro
+Author: libretro
+Section: System
+Tag: role::developer
