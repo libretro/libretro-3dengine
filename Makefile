@@ -38,6 +38,10 @@ else ifneq (,$(findstring osx,$(platform)))
    DEFINES += -DOSX
    CFLAGS += $(DEFINES)
    CXXFLAGS += $(DEFINES)
+ifndef ($(NOUNIVERSAL))
+   CFLAGS += $(ARCHFLAGS)
+   LDFLAGS += $(ARCHFLAGS)
+endif
    INCFLAGS += -Iinclude/compat
    OSXVER = `sw_vers -productVersion | cut -d. -f 2`
    OSX_LT_MAVERICKS = `(( $(OSXVER) <= 9)) && echo "YES"`
@@ -183,7 +187,7 @@ else
 all: $(TARGET)
 
 $(TARGET): $(OBJECTS)
-	$(CXX) $(fpic) $(SHARED) $(INCLUDES) -o $@ $(OBJECTS) $(LIBS) -lm
+	$(CXX) $(fpic) $(SHARED) $(INCLUDES) -o $@ $(OBJECTS) $(LDFLAGS) $(LIBS) -lm
 
 clean:
 	rm -f $(OBJECTS) $(TARGET)
