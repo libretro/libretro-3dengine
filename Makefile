@@ -38,10 +38,6 @@ else ifneq (,$(findstring osx,$(platform)))
    DEFINES += -DOSX
    CFLAGS += $(DEFINES)
    CXXFLAGS += $(DEFINES)
-ifndef ($(NOUNIVERSAL))
-   CFLAGS += $(ARCHFLAGS)
-   LDFLAGS += $(ARCHFLAGS)
-endif
    INCFLAGS += -Iinclude/compat
    OSXVER = `sw_vers -productVersion | cut -d. -f 2`
    OSX_LT_MAVERICKS = `(( $(OSXVER) <= 9)) && echo "YES"`
