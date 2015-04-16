@@ -19,7 +19,7 @@
 #include <string.h>
 #include "libretro.h"
 #include "program.h"
-
+#include "stb_image.h"
 #include "location_math.hpp"
 
 #include <vector>
