@@ -19,10 +19,7 @@
 #include <string.h>
 #include "libretro.h"
 #include "program.h"
-#include "rpng.h"
-#include "rtga.h"
-#include "picojpeg.h"
-
+#include "stb_image.h"
 #include "location_math.hpp"
 
 #include <vector>
@@ -455,35 +452,14 @@ static void print_shader_log(GLuint shader)
 
 static GLuint load_texture(const char *path)
 {
-   uint8_t *data;
-   unsigned width, height;
-   if (strstr(path, ".png"))
+   uint8_t *data = NULL;
+   int width, height;
+   int comp;
+   data =(uint8_t*)stbi_load (path,&width, &height, &comp, 4);
+   if (!data)
    {
-      if (!rpng_load_image_rgba(path, &data, &width, &height))
-      {
-         log_cb(RETRO_LOG_ERROR, "Couldn't load PNG texture: %s\n", path);
-         return 0;
-      }
-   }
-   else if (strstr(path, ".tga"))
-   {
-      if (!texture_image_load_tga(path, data, width, height))
-      {
-         log_cb(RETRO_LOG_ERROR, "Couldn't load TGA texture: %s\n", path);
-         return 0;
-      }
-   }
-   else if (strstr(path, ".jpeg") || strstr(path, ".jpg"))
-   {
-      pjpeg_scan_type_t scan;
-      int comps, reduce;
-      reduce = 0;
-      data = (uint8_t*)pjpeg_load_from_file(path, &width, &height, &comps, &scan, reduce);
-      if (!data)
-      {
-         log_cb(RETRO_LOG_ERROR, "Couldn't load JPEG texture: %s\n", path);
-         return 0;
-      }
+        log_cb(RETRO_LOG_ERROR, "Couldn't load texture: %s\n", path);
+        return 0;
    }
 
    GLuint tex;

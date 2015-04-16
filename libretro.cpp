@@ -26,7 +26,6 @@
 #include <algorithm>
 #include <string>
 #include <vector>
-#include "rpng.h"
 #include "program.h"
 
 #include "gl.hpp"
