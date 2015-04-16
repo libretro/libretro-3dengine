@@ -113,7 +113,7 @@ namespace GL
    Texture::Texture(const std::string& path) : tex(0)
    {
       uint8_t* data = NULL;
-      unsigned width = 0, height = 0;
+      int width = 0, height = 0;
 
       string ext = Path::ext(path);
 
