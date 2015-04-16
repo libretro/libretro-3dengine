@@ -455,7 +455,7 @@ static GLuint load_texture(const char *path)
    uint8_t *data;
    int width, height;
    int comp;
-   data =(uint8_t*)stbi_load (path.c_str(),&width, &height, &comp, 4);
+   data =(uint8_t*)stbi_load (path,&width, &height, &comp, 4);
    if (!data)
    {
         log_cb(RETRO_LOG_ERROR, "Couldn't load JPEG texture: %s\n", path);
