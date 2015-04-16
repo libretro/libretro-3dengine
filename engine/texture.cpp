@@ -16,7 +16,8 @@
  */
 
 #include "texture.hpp"
-#include "rpng.h"
+#define STB_IMAGE_IMPLEMENTATION
+#include "stb_image.h"
 #include "util.hpp"
 #include <stdint.h>
 #include <string.h>
@@ -27,8 +28,6 @@
 #include "gli/gli.hpp"
 #include "gli/gtx/gl_texture2d.hpp"
 #endif
-
-#include "rtga.h"
 
 using namespace std;
 using namespace std1;
@@ -124,21 +123,9 @@ namespace GL
       else
 #endif
       {
-         bool ret = false;
-         if (ext == "png")
-         {
-            ret = rpng_load_image_rgba(path.c_str(),
-                  &data, &width, &height);
-         }
-         else if (ext == "tga")
-         {
-            ret = texture_image_load_tga(path.c_str(),
-                  data, width, height);
-         }
-         else if (log_cb)
-            log_cb(RETRO_LOG_ERROR, "Unrecognized extension: \"%s\"\n", ext.c_str());
-
-         if (ret)
+		 int comp;
+		 data =(uint8_t*)stbi_load (path.c_str(),&width, &height, &comp, 4);
+         if (data)
          {
             upload_data(data, width, height, true);
             free(data);
