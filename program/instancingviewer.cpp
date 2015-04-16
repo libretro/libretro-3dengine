@@ -452,13 +452,13 @@ static void print_shader_log(GLuint shader)
 
 static GLuint load_texture(const char *path)
 {
-   uint8_t *data;
+   uint8_t *data = NULL;
    int width, height;
    int comp;
    data =(uint8_t*)stbi_load (path,&width, &height, &comp, 4);
    if (!data)
    {
-        log_cb(RETRO_LOG_ERROR, "Couldn't load JPEG texture: %s\n", path);
+        log_cb(RETRO_LOG_ERROR, "Couldn't load texture: %s\n", path);
         return 0;
    }
 
