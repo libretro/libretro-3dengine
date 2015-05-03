@@ -11,4 +11,8 @@ SOURCES_CXX  := $(CORE_DIR)/engine/mesh.cpp \
 					 $(CORE_DIR)/libretro.cpp \
 					 $(CORE_DIR)/glsym.cpp
 SOURCES_C    := $(CORE_DIR)/utils/cjson.c \
-					 $(CORE_DIR)/utils/base64.c 
+					 $(CORE_DIR)/utils/rpng.c \
+					 $(CORE_DIR)/utils/base64.c \
+					 $(CORE_DIR)/utils/picojpeg.c \
+					 $(CORE_DIR)/utils/picojpeg-util.c
+SOURCES_CXX  += $(CORE_DIR)/utils/rtga.cpp
