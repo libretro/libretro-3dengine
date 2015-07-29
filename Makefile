@@ -73,7 +73,19 @@ else ifneq (,$(findstring hardfloat,$(platform)))
    CXXFLAGS += -mfloat-abi=hard
 endif
    CXXFLAGS += -DARM
-else ifeq ($(platform), ios)
+else ifeq ($(platform), theos_ios)
+DEPLOYMENT_IOSVERSION = 5.0
+TARGET = iphone:latest:$(DEPLOYMENT_IOSVERSION)
+ARCHS = armv7 armv7s
+TARGET_IPHONEOS_DEPLOYMENT_VERSION=$(DEPLOYMENT_IOSVERSION)
+THEOS_BUILD_DIR := objs
+include $(THEOS)/makefiles/common.mk
+
+LIBRARY_NAME = $(TARGET_NAME)_libretro_ios
+INCFLAGS += -Iinclude/compat
+DEFINES += -DIOS
+GLES = 1
+else ifneq (,$(findstring ios,$(platform)))
    TARGET := $(TARGET_NAME)_libretro_ios.dylib
    GLES := 1
    SHARED := -dynamiclib
@@ -97,19 +109,7 @@ ifeq ($(OSX_LT_MAVERICKS),"YES")
    CFLAGS += -miphoneos-version-min=5.0
    CXXFLAGS += -miphoneos-version-min=5.0
 endif
-else ifeq ($(platform), theos_ios)
-DEPLOYMENT_IOSVERSION = 5.0
-TARGET = iphone:latest:$(DEPLOYMENT_IOSVERSION)
-ARCHS = armv7 armv7s
-TARGET_IPHONEOS_DEPLOYMENT_VERSION=$(DEPLOYMENT_IOSVERSION)
-THEOS_BUILD_DIR := objs
-include $(THEOS)/makefiles/common.mk
-
-LIBRARY_NAME = $(TARGET_NAME)_libretro_ios
-INCFLAGS += -Iinclude/compat
-DEFINES += -DIOS
-GLES = 1
-else ifeq ($(platform), qnx)
+else ifneq (,$(findstring qnx,$(platform)))
    TARGET := $(TARGET_NAME)_libretro_qnx.so
    fpic := -fPIC
    SHARED := -lcpp -lm -shared -Wl,-version-script=link.T -Wl,-no-undefined
@@ -156,7 +156,7 @@ LIBS += -lz
 ifeq ($(GLES), 1)
    CXXFLAGS += -DGLES
    CFLAGS += -DGLES
-ifeq ($(platform), ios)
+ifneq (,$(findstring ios,$(platform)))
    LIBS += $(GL_LIB)
 else
    LIBS += -lGLESv2
