@@ -41,9 +41,7 @@ else ifneq (,$(findstring osx,$(platform)))
    INCFLAGS += -Iinclude/compat
    OSXVER = `sw_vers -productVersion | cut -d. -f 2`
    OSX_LT_MAVERICKS = `(( $(OSXVER) <= 9)) && echo "YES"`
-ifeq ($(OSX_LT_MAVERICKS),"YES")
-   fpic += -fPIC -mmacosx-version-min=10.5
-endif
+   fpic += -fPIC -mmacosx-version-min=10.1
 else ifneq (,$(findstring armv,$(platform)))
    CC = gcc
    CXX = g++
