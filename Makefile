@@ -99,9 +99,12 @@ endif
    CFLAGS += $(DEFINES)
    CXXFLAGS += $(DEFINES)
    INCFLAGS += -Iinclude/compat
-   OSXVER = `sw_vers -productVersion | cut -d. -f 2`
-   OSX_LT_MAVERICKS = `(( $(OSXVER) <= 9)) && echo "YES"`
-ifeq ($(OSX_LT_MAVERICKS),"YES")
+ifeq ($(platform),ios9)
+   CC +=  -miphoneos-version-min=8.0
+   CXX +=  -miphoneos-version-min=8.0
+   CFLAGS += -miphoneos-version-min=8.0
+   CXXFLAGS += -miphoneos-version-min=8.0
+else
    CC +=  -miphoneos-version-min=5.0
    CXX +=  -miphoneos-version-min=5.0
    CFLAGS += -miphoneos-version-min=5.0
