@@ -43,35 +43,35 @@ namespace GL
          bool generate_mipmap)
    {
       if (!tex)
-         SYM(glGenTextures)(1, &tex);
+         glGenTextures(1, &tex);
 
       bind();
 
-      SYM(glTexImage2D)(GL_TEXTURE_2D,
+      glTexImage2D(GL_TEXTURE_2D,
             0, GL_RGBA, width, height, 0,
             GL_RGBA, GL_UNSIGNED_BYTE,
             data);
 
       if (generate_mipmap)
       {
-         SYM(glGenerateMipmap)(GL_TEXTURE_2D);
-         SYM(glTexParameteri)(GL_TEXTURE_2D,
+         glGenerateMipmap(GL_TEXTURE_2D);
+         glTexParameteri(GL_TEXTURE_2D,
                GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-         SYM(glTexParameteri)(GL_TEXTURE_2D,
+         glTexParameteri(GL_TEXTURE_2D,
                GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
 #ifndef HAVE_OPENGLES
          GLint max = 0.0f;
-         SYM(glGetIntegerv)(GL_MAX_TEXTURE_MAX_ANISOTROPY_EXT, &max);
+         glGetIntegerv(GL_MAX_TEXTURE_MAX_ANISOTROPY_EXT, &max);
          if (log_cb)
             log_cb(RETRO_LOG_INFO, "Max anisotropy: %d.\n", max);
-         SYM(glTexParameteri)(GL_TEXTURE_2D, GL_TEXTURE_MAX_ANISOTROPY_EXT, max);
+         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAX_ANISOTROPY_EXT, max);
 #endif
       }
       else
       {
-         SYM(glTexParameteri)(GL_TEXTURE_2D,
+         glTexParameteri(GL_TEXTURE_2D,
                GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-         SYM(glTexParameteri)(GL_TEXTURE_2D,
+         glTexParameteri(GL_TEXTURE_2D,
                GL_TEXTURE_MIN_FILTER, GL_LINEAR);
       }
 
@@ -82,7 +82,7 @@ namespace GL
    void Texture::load_dds(const std::string& path)
    {
       if (!tex)
-         SYM(glGenTextures)(1, &tex);
+         glGenTextures(1, &tex);
 
       if (log_cb)
          log_cb(RETRO_LOG_INFO, "Loading DDS: %s.\n", path.c_str());
@@ -93,20 +93,20 @@ namespace GL
 
       if (levels == 1)
       {
-         SYM(glGenerateMipmap)(GL_TEXTURE_2D);
-         SYM(glTexParameteri)(GL_TEXTURE_2D,
+         glGenerateMipmap(GL_TEXTURE_2D);
+         glTexParameteri(GL_TEXTURE_2D,
                GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-         SYM(glTexParameteri)(GL_TEXTURE_2D,
+         glTexParameteri(GL_TEXTURE_2D,
                GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
       }
 
       GLint max = 0.0f;
-      SYM(glGetIntegerv)(GL_MAX_TEXTURE_MAX_ANISOTROPY_EXT, &max);
+      glGetIntegerv(GL_MAX_TEXTURE_MAX_ANISOTROPY_EXT, &max);
 
       if (log_cb)
          log_cb(RETRO_LOG_INFO, "Max anisotropy: %d.\n", max);
 
-      SYM(glTexParameteri)(GL_TEXTURE_2D, GL_TEXTURE_MAX_ANISOTROPY_EXT, max);
+      glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAX_ANISOTROPY_EXT, max);
       unbind();
    }
 #endif
@@ -150,18 +150,18 @@ namespace GL
 
    Texture::~Texture()
    {
-      if (dead_state)
+      if (renderer_dead_state)
          return;
 
       if (tex)
-         SYM(glDeleteTextures)(1, &tex);
+         glDeleteTextures(1, &tex);
    }
 
    void Texture::bind(unsigned unit)
    {
-      SYM(glActiveTexture)(GL_TEXTURE0 + unit);
-      SYM(glBindTexture)(GL_TEXTURE_2D, tex);
-      SYM(glActiveTexture)(GL_TEXTURE0);
+      glActiveTexture(GL_TEXTURE0 + unit);
+      glBindTexture(GL_TEXTURE_2D, tex);
+      glActiveTexture(GL_TEXTURE0);
    }
 
    std1::shared_ptr<Texture> Texture::blank()
@@ -174,9 +174,9 @@ namespace GL
 
    void Texture::unbind(unsigned unit)
    {
-      SYM(glActiveTexture)(GL_TEXTURE0 + unit);
-      SYM(glBindTexture)(GL_TEXTURE_2D, 0);
-      SYM(glActiveTexture)(GL_TEXTURE0);
+      glActiveTexture(GL_TEXTURE0 + unit);
+      glBindTexture(GL_TEXTURE_2D, 0);
+      glActiveTexture(GL_TEXTURE0);
    }
 }
 

@@ -223,7 +223,7 @@ namespace detail
 		{
 			for(gli::texture2D::size_type Level = 0; Level < Texture.levels(); ++Level)
 			{
-				SYM(glCompressedTexImage2D)(
+				glCompressedTexImage2D(
 					GL_TEXTURE_2D,
 					GLint(Level),
 					Desc.Internal,

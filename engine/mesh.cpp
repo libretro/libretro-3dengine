@@ -32,16 +32,16 @@ namespace GL
       view(mat4(1.0)),
       projection(mat4(1.0))
    {
-      SYM(glGenBuffers)(1, &vbo);
+      glGenBuffers(1, &vbo);
       mvp = projection * view * model;
    }
 
    Mesh::~Mesh()
    {
-      if (dead_state)
+      if (renderer_dead_state)
          return;
 
-      SYM(glDeleteBuffers)(1, &vbo);
+      glDeleteBuffers(1, &vbo);
    }
 
    void Mesh::set_lighting(float r, float g, float b)
@@ -78,10 +78,10 @@ namespace GL
    {
       this->vertex = vertex;
 
-      SYM(glBindBuffer)(GL_ARRAY_BUFFER, vbo);
-      SYM(glBufferData)(GL_ARRAY_BUFFER, vertex->size() * sizeof(Vertex),
+      glBindBuffer(GL_ARRAY_BUFFER, vbo);
+      glBufferData(GL_ARRAY_BUFFER, vertex->size() * sizeof(Vertex),
             &(*vertex)[0], GL_STATIC_DRAW);
-      SYM(glBindBuffer)(GL_ARRAY_BUFFER, 0);
+      glBindBuffer(GL_ARRAY_BUFFER, 0);
    }
 
    void Mesh::set_material(const Material& material)
@@ -136,31 +136,31 @@ namespace GL
 
       shader->use();
 
-      SYM(glUniform1i)(shader->uniform("sDiffuse"), 0);
-      SYM(glUniform1i)(shader->uniform("sAmbient"), 1);
+      glUniform1i(shader->uniform("sDiffuse"), 0);
+      glUniform1i(shader->uniform("sAmbient"), 1);
 
-      SYM(glUniformMatrix4fv)(shader->uniform("uModel"),
+      glUniformMatrix4fv(shader->uniform("uModel"),
             1, GL_FALSE, value_ptr(model));
-      SYM(glUniformMatrix4fv)(shader->uniform("uMVP"),
+      glUniformMatrix4fv(shader->uniform("uMVP"),
             1, GL_FALSE, value_ptr(mvp));
-      SYM(glUniform3fv)(shader->uniform("uEyePos"),
+      glUniform3fv(shader->uniform("uEyePos"),
             1, value_ptr(eye_pos));
 
-      SYM(glUniform3fv)(shader->uniform("uMTLAmbient"),
+      glUniform3fv(shader->uniform("uMTLAmbient"),
             1, value_ptr(material.ambient));
-      SYM(glUniform3fv)(shader->uniform("uMTLDiffuse"),
+      glUniform3fv(shader->uniform("uMTLDiffuse"),
             1, value_ptr(material.diffuse));
-      SYM(glUniform3fv)(shader->uniform("uMTLSpecular"),
+      glUniform3fv(shader->uniform("uMTLSpecular"),
             1, value_ptr(material.specular));
-      SYM(glUniform1f)(shader->uniform("uMTLSpecularPower"),
+      glUniform1f(shader->uniform("uMTLSpecularPower"),
             material.specular_power);
-      SYM(glUniform1f)(shader->uniform("uMTLAlphaMod"),
+      glUniform1f(shader->uniform("uMTLAlphaMod"),
             material.alpha_mod);
 
-      SYM(glUniform3fv)(shader->uniform("uLightPos"),
+      glUniform3fv(shader->uniform("uLightPos"),
             1, value_ptr(light_pos));
 
-      SYM(glUniform3fv)(shader->uniform("uLightAmbient"),
+      glUniform3fv(shader->uniform("uLightAmbient"),
             1, value_ptr(light_ambient));
 
 
@@ -168,42 +168,42 @@ namespace GL
       GLint aNormal = shader->attrib("aNormal");
       GLint aTex    = shader->attrib("aTex");
 
-      SYM(glBindBuffer)(GL_ARRAY_BUFFER, vbo);
+      glBindBuffer(GL_ARRAY_BUFFER, vbo);
 
       if (aVertex >= 0)
       {
-         SYM(glEnableVertexAttribArray)(aVertex);
-         SYM(glVertexAttribPointer)(aVertex, 3, GL_FLOAT,
+         glEnableVertexAttribArray(aVertex);
+         glVertexAttribPointer(aVertex, 3, GL_FLOAT,
                GL_FALSE, sizeof(Vertex),
                reinterpret_cast<const GLvoid*>(offsetof(Vertex, vert)));
       }
 
       if (aNormal >= 0)
       {
-         SYM(glEnableVertexAttribArray)(aNormal);
-         SYM(glVertexAttribPointer)(aNormal, 3, GL_FLOAT,
+         glEnableVertexAttribArray(aNormal);
+         glVertexAttribPointer(aNormal, 3, GL_FLOAT,
                GL_FALSE, sizeof(Vertex),
                reinterpret_cast<const GLvoid*>(offsetof(Vertex, normal)));
       }
 
       if (aTex >= 0)
       {
-         SYM(glEnableVertexAttribArray)(aTex);
-         SYM(glVertexAttribPointer)(aTex, 2, GL_FLOAT,
+         glEnableVertexAttribArray(aTex);
+         glVertexAttribPointer(aTex, 2, GL_FLOAT,
                GL_FALSE, sizeof(Vertex),
                reinterpret_cast<const GLvoid*>(offsetof(Vertex, tex)));
       }
 
-      SYM(glDrawArrays)(vertex_type, 0, vertex->size());
+      glDrawArrays(vertex_type, 0, vertex->size());
 
       if (aVertex >= 0)
-         SYM(glDisableVertexAttribArray)(aVertex);
+         glDisableVertexAttribArray(aVertex);
       if (aNormal >= 0)
-         SYM(glDisableVertexAttribArray)(aNormal);
+         glDisableVertexAttribArray(aNormal);
       if (aTex >= 0)
-         SYM(glDisableVertexAttribArray)(aTex);
+         glDisableVertexAttribArray(aTex);
 
-      SYM(glBindBuffer)(GL_ARRAY_BUFFER, 0);
+      glBindBuffer(GL_ARRAY_BUFFER, 0);
 
       Texture::unbind(0);
       Texture::unbind(1);

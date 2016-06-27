@@ -39,6 +39,7 @@
 retro_position_t previous_location;
 retro_position_t current_location;
 
+bool renderer_dead_state = true;
 bool sensor_initialized = false;
 bool sensor_enable = false;
 bool location_camera_control_enable = false;
@@ -291,7 +292,7 @@ static inline bool gl_query_extension(const char *ext)
 {
 #ifndef ANDROID
    // This code crashes right now on Android 4.4 (but not 4.0 to 4.3), so comment it out for now
-   const char *str = (const char*)SYM(glGetString)(GL_EXTENSIONS);
+   const char *str = (const char*)glGetString(GL_EXTENSIONS);
    bool ret = str && strstr(str, ext);
 
    return ret;
@@ -328,27 +329,27 @@ static void camera_raw_fb_callback(const uint32_t *buffer, unsigned width, unsig
 
    if (!tex)
    {
-      SYM(glGenTextures)(1, &tex);
-      SYM(glBindTexture)(GL_TEXTURE_2D, tex);
-      SYM(glTexParameteri)(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-      SYM(glTexParameteri)(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-      SYM(glTexParameteri)(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-      SYM(glTexParameteri)(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-      SYM(glTexImage2D)(GL_TEXTURE_2D, 0, INTERNAL_FORMAT, width, height, 0, TEX_TYPE, TEX_FORMAT, NULL);
+      glGenTextures(1, &tex);
+      glBindTexture(GL_TEXTURE_2D, tex);
+      glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+      glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+      glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+      glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+      glTexImage2D(GL_TEXTURE_2D, 0, INTERNAL_FORMAT, width, height, 0, TEX_TYPE, TEX_FORMAT, NULL);
       if (!support_unpack_row_length)
          convert_buffer = new uint8_t[width * height * 4];
    }
    else
-      SYM(glBindTexture)(GL_TEXTURE_2D, tex);
+      glBindTexture(GL_TEXTURE_2D, tex);
 
    if (support_unpack_row_length)
    {
-      SYM(glPixelStorei)(GL_UNPACK_ROW_LENGTH, pitch / base_size);
-      SYM(glTexSubImage2D)(GL_TEXTURE_2D,
+      glPixelStorei(GL_UNPACK_ROW_LENGTH, pitch / base_size);
+      glTexSubImage2D(GL_TEXTURE_2D,
             0, 0, 0, width, height, TEX_TYPE,
             TEX_FORMAT, buffer);
 
-      SYM(glPixelStorei)(GL_UNPACK_ROW_LENGTH, 0);
+      glPixelStorei(GL_UNPACK_ROW_LENGTH, 0);
    }
    else
    {
@@ -356,7 +357,7 @@ static void camera_raw_fb_callback(const uint32_t *buffer, unsigned width, unsig
       unsigned pitch_width = pitch / base_size;
       if (width == pitch_width) // Happy path :D
       {
-         SYM(glTexSubImage2D)(GL_TEXTURE_2D,
+         glTexSubImage2D(GL_TEXTURE_2D,
                0, 0, 0, width, height, TEX_TYPE,
                TEX_FORMAT, buffer);
       }
@@ -370,13 +371,13 @@ static void camera_raw_fb_callback(const uint32_t *buffer, unsigned width, unsig
          for (h = 0; h < height; h++, src += pitch, dst += line_bytes)
             memcpy(dst, src, line_bytes);
 
-         SYM(glTexSubImage2D)(GL_TEXTURE_2D,
+         glTexSubImage2D(GL_TEXTURE_2D,
                0, 0, 0, width, height, TEX_TYPE,
                TEX_FORMAT, convert_buffer);         
       }
    }
 
-   SYM(glBindTexture)(GL_TEXTURE_2D, 0);
+   glBindTexture(GL_TEXTURE_2D, 0);
 }
 
 static void camera_initialized(void)
@@ -547,7 +548,7 @@ bool retro_load_game(const struct retro_game_info *info)
 
 void retro_unload_game(void)
 {
-   GL::dead_state = true;
+   renderer_dead_state = true;
 
    if (convert_buffer)
       delete[] convert_buffer;

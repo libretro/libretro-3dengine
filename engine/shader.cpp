@@ -22,29 +22,29 @@ namespace GL
 {
    Shader::Shader(const std::string& vertex_src, const std::string& fragment_src)
    {
-      prog = SYM(glCreateProgram)();
+      prog          = glCreateProgram();
 
+      GLint status  = 0;
       GLuint vertex = compile_shader(GL_VERTEX_SHADER, vertex_src);
-      GLuint frag = compile_shader(GL_FRAGMENT_SHADER, fragment_src);
+      GLuint frag   = compile_shader(GL_FRAGMENT_SHADER, fragment_src);
 
       if (vertex)
-         SYM(glAttachShader)(prog, vertex);
+         glAttachShader(prog, vertex);
       if (frag)
-         SYM(glAttachShader)(prog, frag);
+         glAttachShader(prog, frag);
 
-      SYM(glLinkProgram)(prog);
-      GLint status = 0;
-      SYM(glGetProgramiv)(prog, GL_LINK_STATUS, &status);
+      glLinkProgram(prog);
+      glGetProgramiv(prog, GL_LINK_STATUS, &status);
       if (!status)
       {
          GLint len = 0;
-         SYM(glGetProgramiv)(prog, GL_INFO_LOG_LENGTH, &len);
+         glGetProgramiv(prog, GL_INFO_LOG_LENGTH, &len);
 
          if (len > 0)
          {
             std::vector<char> buf(len + 1);
             GLsizei out_len;
-            SYM(glGetProgramInfoLog)(prog, len, &out_len, &buf[0]);
+            glGetProgramInfoLog(prog, len, &out_len, &buf[0]);
 
             if (log_cb)
                log_cb(RETRO_LOG_ERROR, "Link error: %s\n", &buf[0]);
@@ -54,30 +54,31 @@ namespace GL
 
    GLuint Shader::compile_shader(GLenum type, const std::string& source)
    {
-      GLuint shader = SYM(glCreateShader)(type);
-
+      GLint status    = 0;
+      GLuint shader   = glCreateShader(type);
       const char* src = source.c_str();
-      SYM(glShaderSource)(shader, 1, &src, NULL);
-      SYM(glCompileShader)(shader);
 
-      GLint status = 0;
-      SYM(glGetShaderiv)(shader, GL_COMPILE_STATUS, &status);
+      glShaderSource(shader, 1, &src, NULL);
+      glCompileShader(shader);
+
+      glGetShaderiv(shader, GL_COMPILE_STATUS, &status);
       if (!status)
       {
          GLint len = 0;
-         SYM(glGetShaderiv)(shader, GL_INFO_LOG_LENGTH, &len);
+         glGetShaderiv(shader, GL_INFO_LOG_LENGTH, &len);
 
          if (len > 0)
          {
-            std::vector<char> buf(len + 1);
             GLsizei out_len;
-            SYM(glGetShaderInfoLog)(shader, len, &out_len, &buf[0]);
+            std::vector<char> buf(len + 1);
+
+            glGetShaderInfoLog(shader, len, &out_len, &buf[0]);
 
             if (log_cb)
                log_cb(RETRO_LOG_ERROR, "Shader error: %s\n", &buf[0]);
          }
 
-         SYM(glDeleteShader)(shader);
+         glDeleteShader(shader);
          return 0;
       }
 
@@ -86,30 +87,30 @@ namespace GL
 
    Shader::~Shader()
    {
-      if (dead_state)
+      if (renderer_dead_state)
          return;
 
       GLsizei count;
       GLuint shaders[2];
 
-      SYM(glGetAttachedShaders)(prog, 2, &count, shaders);
+      glGetAttachedShaders(prog, 2, &count, shaders);
       for (GLsizei i = 0; i < count; i++)
       {
-         SYM(glDetachShader)(prog, shaders[i]);
-         SYM(glDeleteShader)(shaders[i]);
+         glDetachShader(prog, shaders[i]);
+         glDeleteShader(shaders[i]);
       }
 
-      SYM(glDeleteProgram)(prog);
+      glDeleteProgram(prog);
    }
 
    void Shader::use()
    {
-      SYM(glUseProgram)(prog);
+      glUseProgram(prog);
    }
 
    void Shader::unbind()
    {
-      SYM(glUseProgram)(0);
+      glUseProgram(0);
    }
 
    GLint Shader::uniform(const char* sym)
@@ -118,7 +119,7 @@ namespace GL
 
       std::map<std::string, GLint>::iterator itr = map.find(sym);
       if (itr == map.end())
-         map[sym] = ret = SYM(glGetUniformLocation)(prog, sym);
+         map[sym] = ret = glGetUniformLocation(prog, sym);
       else
          ret = itr->second;
 
@@ -131,7 +132,7 @@ namespace GL
 
       std::map<std::string, GLint>::iterator itr = map.find(sym);
       if (itr == map.end())
-         map[sym] = ret = SYM(glGetAttribLocation)(prog, sym);
+         map[sym] = ret = glGetAttribLocation(prog, sym);
       else
          ret = itr->second;
 

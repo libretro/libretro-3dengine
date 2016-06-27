@@ -23,6 +23,8 @@
 #include "collision_detection.hpp"
 #include "location_math.h"
 
+#include <glsym/glsym.h>
+
 #include <vector>
 #include <string.h>
 
@@ -575,10 +577,10 @@ extern char retro_path_info[1024];
 
 static void modelviewer_context_reset(void)
 {
-   GL::dead_state = true;
+   renderer_dead_state = true;
    meshes.clear();
    blank.reset();
-   GL::dead_state = false;
+   renderer_dead_state = false;
 
    if (strstr(retro_path_info, ".mtl") || mode_engine == MODE_SCENEWALKER)
    {
@@ -587,8 +589,7 @@ static void modelviewer_context_reset(void)
       mode_engine = MODE_SCENEWALKER;
    }
 
-   GL::set_function_cb(hw_render.get_proc_address);
-   GL::init_symbol_map();
+   rglgen_resolve_symbols(hw_render.get_proc_address);
 
    blank = GL::Texture::blank();
    init_mesh(mesh_path);
@@ -621,22 +622,22 @@ static void modelviewer_run(void)
    vec3 look_dir = modelviewer_check_input();
    (void)look_dir;
 
-   SYM(glBindFramebuffer)(GL_FRAMEBUFFER, hw_render.get_current_framebuffer());
-   SYM(glViewport)(0, 0, engine_width, engine_height);
-   SYM(glClearColor)(0.2f, 0.2f, 0.2f, 1.0f);
-   SYM(glClear)(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+   glBindFramebuffer(GL_FRAMEBUFFER, hw_render.get_current_framebuffer());
+   glViewport(0, 0, engine_width, engine_height);
+   glClearColor(0.2f, 0.2f, 0.2f, 1.0f);
+   glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-   SYM(glEnable)(GL_DEPTH_TEST);
-   SYM(glFrontFace)(GL_CW); // When we flip vertically, orientation changes.
-   SYM(glEnable)(GL_CULL_FACE);
-   SYM(glEnable)(GL_BLEND);
+   glEnable(GL_DEPTH_TEST);
+   glFrontFace(GL_CW); // When we flip vertically, orientation changes.
+   glEnable(GL_CULL_FACE);
+   glEnable(GL_BLEND);
 
    for (unsigned i = 0; i < meshes.size(); i++)
       meshes[i]->render();
 
-   SYM(glDisable)(GL_BLEND);
-   SYM(glDisable)(GL_DEPTH_TEST);
-   SYM(glDisable)(GL_CULL_FACE);
+   glDisable(GL_BLEND);
+   glDisable(GL_DEPTH_TEST);
+   glDisable(GL_CULL_FACE);
    video_cb(RETRO_HW_FRAME_BUFFER_VALID, engine_width, engine_height, 0);
 }
 

@@ -23,6 +23,8 @@
 #include "rtga.h"
 #include "picojpeg.h"
 
+#include <glsym/glsym.h>
+
 #include "location_math.h"
 
 #include <vector>
@@ -204,16 +206,16 @@ static const GLubyte indices[] = {
 
 static void display_cubes_array(void)
 {
-   SYM(glBindBuffer)(GL_ARRAY_BUFFER, vbo);
-   int vloc = SYM(glGetAttribLocation)(prog, "aVertex");
-   SYM(glVertexAttribPointer)(vloc, 4, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*)(offsetof(Vertex, vert)));
-   SYM(glEnableVertexAttribArray)(vloc);
-   int nloc = SYM(glGetAttribLocation)(prog, "aNormal");
-   SYM(glVertexAttribPointer)(nloc, 4, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*)(offsetof(Vertex, normal)));
-   SYM(glEnableVertexAttribArray)(nloc);
-   int tcloc = SYM(glGetAttribLocation)(prog, "aTexCoord");
-   SYM(glVertexAttribPointer)(tcloc, 2, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*)(offsetof(Vertex, tex)));
-   SYM(glEnableVertexAttribArray)(tcloc);
+   glBindBuffer(GL_ARRAY_BUFFER, vbo);
+   int vloc = glGetAttribLocation(prog, "aVertex");
+   glVertexAttribPointer(vloc, 4, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*)(offsetof(Vertex, vert)));
+   glEnableVertexAttribArray(vloc);
+   int nloc = glGetAttribLocation(prog, "aNormal");
+   glVertexAttribPointer(nloc, 4, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*)(offsetof(Vertex, normal)));
+   glEnableVertexAttribArray(nloc);
+   int tcloc = glGetAttribLocation(prog, "aTexCoord");
+   glVertexAttribPointer(tcloc, 2, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*)(offsetof(Vertex, tex)));
+   glEnableVertexAttribArray(tcloc);
 
    if (update)
    {
@@ -244,16 +246,16 @@ static void display_cubes_array(void)
             }
          }
       }
-      SYM(glBufferData)(GL_ARRAY_BUFFER, cube_size * cube_size * cube_size * sizeof(Cube),
+      glBufferData(GL_ARRAY_BUFFER, cube_size * cube_size * cube_size * sizeof(Cube),
             &cubes[0], GL_STATIC_DRAW);
-      SYM(glBindBuffer)(GL_ARRAY_BUFFER, 0);
+      glBindBuffer(GL_ARRAY_BUFFER, 0);
    }
 
-   SYM(glDrawArrays)(GL_TRIANGLES, 0, CUBE_VERTS * cube_size * cube_size * cube_size);
-   SYM(glBindBuffer)(GL_ARRAY_BUFFER, 0);
-   SYM(glDisableVertexAttribArray)(vloc);
-   SYM(glDisableVertexAttribArray)(nloc);
-   SYM(glDisableVertexAttribArray)(tcloc);
+   glDrawArrays(GL_TRIANGLES, 0, CUBE_VERTS * cube_size * cube_size * cube_size);
+   glBindBuffer(GL_ARRAY_BUFFER, 0);
+   glDisableVertexAttribArray(vloc);
+   glDisableVertexAttribArray(nloc);
+   glDisableVertexAttribArray(tcloc);
 }
 
 #if 0
@@ -443,12 +445,12 @@ static vec3 instancingviewer_check_input(void)
 static void print_shader_log(GLuint shader)
 {
    GLsizei len = 0;
-   SYM(glGetShaderiv)(shader, GL_INFO_LOG_LENGTH, &len);
+   glGetShaderiv(shader, GL_INFO_LOG_LENGTH, &len);
    if (!len)
       return;
 
    char *buffer = new char[len];
-   SYM(glGetShaderInfoLog)(shader, len, &len, buffer);
+   glGetShaderInfoLog(shader, len, &len, buffer);
    log_cb(RETRO_LOG_INFO, ":%s\n", buffer);
    delete[] buffer;
 }
@@ -487,95 +489,95 @@ static GLuint load_texture(const char *path)
    }
 
    GLuint tex;
-   SYM(glGenTextures)(1, &tex);
-   SYM(glBindTexture)(GL_TEXTURE_2D, tex);
+   glGenTextures(1, &tex);
+   glBindTexture(GL_TEXTURE_2D, tex);
 
-   SYM(glTexImage2D)(GL_TEXTURE_2D, 0, GL_RGBA, width, height,
+   glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, width, height,
          0, GL_RGBA, GL_UNSIGNED_BYTE, data);
    free(data);
 
-   SYM(glTexParameteri)(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-   SYM(glTexParameteri)(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+   glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+   glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
    return tex;
 }
 
 static void instancingviewer_compile_shaders(void)
 {
-   prog = SYM(glCreateProgram)();
-   GLuint vert = SYM(glCreateShader)(GL_VERTEX_SHADER);
-   GLuint frag = SYM(glCreateShader)(GL_FRAGMENT_SHADER);
+   prog = glCreateProgram();
+   GLuint vert = glCreateShader(GL_VERTEX_SHADER);
+   GLuint frag = glCreateShader(GL_FRAGMENT_SHADER);
 
-   SYM(glShaderSource)(vert, ARRAY_SIZE(vertex_shader), vertex_shader, 0);
-   SYM(glShaderSource)(frag, ARRAY_SIZE(fragment_shader), fragment_shader, 0);
-   SYM(glCompileShader)(vert);
-   SYM(glCompileShader)(frag);
+   glShaderSource(vert, ARRAY_SIZE(vertex_shader), vertex_shader, 0);
+   glShaderSource(frag, ARRAY_SIZE(fragment_shader), fragment_shader, 0);
+   glCompileShader(vert);
+   glCompileShader(frag);
 
    int status = 0;
-   SYM(glGetShaderiv)(vert, GL_COMPILE_STATUS, &status);
+   glGetShaderiv(vert, GL_COMPILE_STATUS, &status);
    if (!status && log_cb)
    {
       log_cb(RETRO_LOG_ERROR, "Vertex shader failed to compile!\n");
       print_shader_log(vert);
    }
-   SYM(glGetShaderiv)(frag, GL_COMPILE_STATUS, &status);
+   glGetShaderiv(frag, GL_COMPILE_STATUS, &status);
    if (!status && log_cb)
    {
       log_cb(RETRO_LOG_ERROR, "Fragment shader failed to compile!\n");
       print_shader_log(frag);
    }
 
-   SYM(glAttachShader)(prog, vert);
-   SYM(glAttachShader)(prog, frag);
-   SYM(glLinkProgram)(prog);
+   glAttachShader(prog, vert);
+   glAttachShader(prog, frag);
+   glLinkProgram(prog);
 
-   SYM(glGetProgramiv)(prog, GL_LINK_STATUS, &status);
+   glGetProgramiv(prog, GL_LINK_STATUS, &status);
    if (!status && log_cb)
       log_cb(RETRO_LOG_ERROR, "Program failed to link!\n");
 
 
-   background_prog = SYM(glCreateProgram)();
-   GLuint background_vert = SYM(glCreateShader)(GL_VERTEX_SHADER);
-   GLuint background_frag = SYM(glCreateShader)(GL_FRAGMENT_SHADER);
+   background_prog        = glCreateProgram();
+   GLuint background_vert = glCreateShader(GL_VERTEX_SHADER);
+   GLuint background_frag = glCreateShader(GL_FRAGMENT_SHADER);
 
-   SYM(glShaderSource)(background_vert, ARRAY_SIZE(background_vertex_shader), background_vertex_shader, 0);
-   SYM(glShaderSource)(background_frag, ARRAY_SIZE(background_fragment_shader), background_fragment_shader, 0);
-   SYM(glCompileShader)(background_vert);
-   SYM(glCompileShader)(background_frag);
+   glShaderSource(background_vert, ARRAY_SIZE(background_vertex_shader), background_vertex_shader, 0);
+   glShaderSource(background_frag, ARRAY_SIZE(background_fragment_shader), background_fragment_shader, 0);
+   glCompileShader(background_vert);
+   glCompileShader(background_frag);
 
-   SYM(glGetShaderiv)(background_vert, GL_COMPILE_STATUS, &status);
+   glGetShaderiv(background_vert, GL_COMPILE_STATUS, &status);
    if (!status && log_cb)
    {
       log_cb(RETRO_LOG_ERROR, "Background vertex shader failed to compile!\n");
       print_shader_log(background_vert);
    }
-   SYM(glGetShaderiv)(background_frag, GL_COMPILE_STATUS, &status);
+   glGetShaderiv(background_frag, GL_COMPILE_STATUS, &status);
    if (!status && log_cb)
    {
       log_cb(RETRO_LOG_ERROR, "Background fragment shader failed to compile!\n");
       print_shader_log(background_frag);
    }
 
-   SYM(glAttachShader)(background_prog, background_vert);
-   SYM(glAttachShader)(background_prog, background_frag);
-   SYM(glLinkProgram)(background_prog);
+   glAttachShader(background_prog, background_vert);
+   glAttachShader(background_prog, background_frag);
+   glLinkProgram(background_prog);
 
-   SYM(glGetProgramiv)(background_prog, GL_LINK_STATUS, &status);
+   glGetProgramiv(background_prog, GL_LINK_STATUS, &status);
    if (!status && log_cb)
       log_cb(RETRO_LOG_ERROR, "Background program failed to link!\n");
 
-   SYM(glBindBuffer)(GL_ARRAY_BUFFER, background_vbo);
-   int vloc = SYM(glGetAttribLocation)(background_prog, "VertexCoord");
-   SYM(glVertexAttribPointer)(vloc, 2, GL_FLOAT, GL_FALSE, sizeof(GLfloat) * 4, (void*)(0));
-   SYM(glEnableVertexAttribArray)(vloc);
-   int tcloc = SYM(glGetAttribLocation)(background_prog, "TexCoord");
-   SYM(glVertexAttribPointer)(tcloc, 2, GL_FLOAT, GL_FALSE, sizeof(GLfloat) * 4, (void*)(sizeof(GLfloat) * 2));
-   SYM(glEnableVertexAttribArray)(tcloc);
+   glBindBuffer(GL_ARRAY_BUFFER, background_vbo);
+   int vloc = glGetAttribLocation(background_prog, "VertexCoord");
+   glVertexAttribPointer(vloc, 2, GL_FLOAT, GL_FALSE, sizeof(GLfloat) * 4, (void*)(0));
+   glEnableVertexAttribArray(vloc);
+   int tcloc = glGetAttribLocation(background_prog, "TexCoord");
+   glVertexAttribPointer(tcloc, 2, GL_FLOAT, GL_FALSE, sizeof(GLfloat) * 4, (void*)(sizeof(GLfloat) * 2));
+   glEnableVertexAttribArray(tcloc);
 
-   SYM(glBufferData)(GL_ARRAY_BUFFER, 4 * sizeof(GLfloat) * 4,
+   glBufferData(GL_ARRAY_BUFFER, 4 * sizeof(GLfloat) * 4,
          &background_data[0], GL_STATIC_DRAW);
-   SYM(glBindBuffer)(GL_ARRAY_BUFFER, 0);
-   SYM(glDisableVertexAttribArray)(tcloc);
-   SYM(glDisableVertexAttribArray)(vloc);
+   glBindBuffer(GL_ARRAY_BUFFER, 0);
+   glDisableVertexAttribArray(tcloc);
+   glDisableVertexAttribArray(vloc);
 
    tex = 0;
 
@@ -588,11 +590,10 @@ static void instancingviewer_context_reset(void)
    if (log_cb)
       log_cb(RETRO_LOG_INFO, "Context reset!\n");
 
-   GL::set_function_cb(hw_render.get_proc_address);
-   GL::init_symbol_map();
+   rglgen_resolve_symbols(hw_render.get_proc_address);
 
-   SYM(glGenBuffers)(1, &vbo);
-   SYM(glGenBuffers)(1, &background_vbo);
+   glGenBuffers(1, &vbo);
+   glGenBuffers(1, &background_vbo);
    instancingviewer_compile_shaders();
    update = true;
 }
@@ -632,66 +633,66 @@ static void instancingviewer_run(void)
 {
    vec3 look_dir = instancingviewer_check_input();
 
-   SYM(glBindFramebuffer)(GL_FRAMEBUFFER, hw_render.get_current_framebuffer());
-   SYM(glClearColor)(0.1, 0.1, 0.1, 1.0);
-   SYM(glViewport)(0, 0, engine_width, engine_height);
-   SYM(glClear)(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+   glBindFramebuffer(GL_FRAMEBUFFER, hw_render.get_current_framebuffer());
+   glClearColor(0.1, 0.1, 0.1, 1.0);
+   glViewport(0, 0, engine_width, engine_height);
+   glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-   SYM(glUseProgram)(background_prog);
+   glUseProgram(background_prog);
 
-   SYM(glDisable)(GL_DEPTH_TEST);
-   SYM(glEnable)(GL_CULL_FACE);
+   glDisable(GL_DEPTH_TEST);
+   glEnable(GL_CULL_FACE);
 
-   int texloc = SYM(glGetUniformLocation)(background_prog, "Texture");
-   SYM(glUniform1i)(texloc, 0);
-   SYM(glActiveTexture)(GL_TEXTURE0);
-   SYM(glBindBuffer)(GL_ARRAY_BUFFER, background_vbo);
-   int vloc = SYM(glGetAttribLocation)(background_prog, "VertexCoord");
-   SYM(glVertexAttribPointer)(vloc, 2, GL_FLOAT, GL_FALSE, sizeof(GLfloat) * 4, (void*)(0));
-   SYM(glEnableVertexAttribArray)(vloc);
-   int tcloc = SYM(glGetAttribLocation)(background_prog, "TexCoord");
-   SYM(glVertexAttribPointer)(tcloc, 2, GL_FLOAT, GL_FALSE, sizeof(GLfloat) * 4, (void*)(sizeof(GLfloat) * 2));
-   SYM(glEnableVertexAttribArray)(tcloc);
+   int texloc = glGetUniformLocation(background_prog, "Texture");
+   glUniform1i(texloc, 0);
+   glActiveTexture(GL_TEXTURE0);
+   glBindBuffer(GL_ARRAY_BUFFER, background_vbo);
+   int vloc = glGetAttribLocation(background_prog, "VertexCoord");
+   glVertexAttribPointer(vloc, 2, GL_FLOAT, GL_FALSE, sizeof(GLfloat) * 4, (void*)(0));
+   glEnableVertexAttribArray(vloc);
+   int tcloc = glGetAttribLocation(background_prog, "TexCoord");
+   glVertexAttribPointer(tcloc, 2, GL_FLOAT, GL_FALSE, sizeof(GLfloat) * 4, (void*)(sizeof(GLfloat) * 2));
+   glEnableVertexAttribArray(tcloc);
 
-   SYM(glBindTexture)(g_texture_target, tex);
+   glBindTexture(g_texture_target, tex);
 
-   SYM(glDrawArrays)(GL_TRIANGLE_STRIP, 0, 4);
-   SYM(glDisableVertexAttribArray)(tcloc);
-   SYM(glDisableVertexAttribArray)(vloc);
+   glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
+   glDisableVertexAttribArray(tcloc);
+   glDisableVertexAttribArray(vloc);
 
-   SYM(glUseProgram)(prog);
+   glUseProgram(prog);
 
-   SYM(glEnable)(GL_DEPTH_TEST);
-   SYM(glEnable)(GL_CULL_FACE);
+   glEnable(GL_DEPTH_TEST);
+   glEnable(GL_CULL_FACE);
 
-   int tloc = SYM(glGetUniformLocation)(prog, "uTexture");
-   SYM(glUniform1i)(tloc, 0);
-   SYM(glActiveTexture)(GL_TEXTURE0);
+   int tloc = glGetUniformLocation(prog, "uTexture");
+   glUniform1i(tloc, 0);
+   glActiveTexture(GL_TEXTURE0);
 
-   SYM(glBindTexture)(g_texture_target, tex);
+   glBindTexture(g_texture_target, tex);
 
-   int lloc = SYM(glGetUniformLocation)(prog, "light_pos");
+   int lloc = glGetUniformLocation(prog, "light_pos");
    vec3 light_pos(light_r, light_g, light_b);
-   SYM(glUniform3fv)(lloc, 1, &light_pos[0]);
+   glUniform3fv(lloc, 1, &light_pos[0]);
 
    vec4 ambient_light(ambient_light_r, ambient_light_g, ambient_light_b, ambient_light_a);
-   lloc = SYM(glGetUniformLocation)(prog, "ambient_light");
-   SYM(glUniform4fv)(lloc, 1, &ambient_light[0]);
+   lloc = glGetUniformLocation(prog, "ambient_light");
+   glUniform4fv(lloc, 1, &ambient_light[0]);
 
-   int vploc = SYM(glGetUniformLocation)(prog, "uVP");
+   int vploc = glGetUniformLocation(prog, "uVP");
    mat4 view = lookAt(player_pos, player_pos + look_dir, vec3(0, 1, 0));
    mat4 proj = scale(mat4(1.0), vec3(1, -1, 1)) * perspective(45.0f, 640.0f / 480.0f, 5.0f, 500.0f);
    mat4 vp = proj * view;
-   SYM(glUniformMatrix4fv)(vploc, 1, GL_FALSE, &vp[0][0]);
+   glUniformMatrix4fv(vploc, 1, GL_FALSE, &vp[0][0]);
 
-   int modelloc = SYM(glGetUniformLocation)(prog, "uM");
+   int modelloc = glGetUniformLocation(prog, "uM");
    mat4 model = mat4(1.0);
-   SYM(glUniformMatrix4fv)(modelloc, 1, GL_FALSE, &model[0][0]);
+   glUniformMatrix4fv(modelloc, 1, GL_FALSE, &model[0][0]);
 
    display_cubes_array();
 
-   SYM(glUseProgram)(0);
-   SYM(glBindTexture)(g_texture_target, 0);
+   glUseProgram(0);
+   glBindTexture(g_texture_target, 0);
 
    video_cb(RETRO_HW_FRAME_BUFFER_VALID, engine_width, engine_height, 0);
 }
