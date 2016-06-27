@@ -609,9 +609,9 @@ static void modelviewer_update_variables(retro_environment_t environ_cb)
 
    if (environ_cb(RETRO_ENVIRONMENT_GET_VARIABLE, &var) && var.value)
    {
-      if (strcmp(var.value, "disabled") == 0)
+      if (!strcmp(var.value, "disabled"))
          discard_hack_enable = false;
-      else if (strcmp(var.value, "enabled") == 0)
+      else if (!strcmp(var.value, "enabled"))
          discard_hack_enable = true;
 
       if (!first_init)
@@ -622,6 +622,7 @@ static void modelviewer_update_variables(retro_environment_t environ_cb)
 
 static void modelviewer_run(void)
 {
+   unsigned i;
    vec3 look_dir = modelviewer_check_input();
    (void)look_dir;
 
@@ -635,7 +636,7 @@ static void modelviewer_run(void)
    glEnable(GL_CULL_FACE);
    glEnable(GL_BLEND);
 
-   for (unsigned i = 0; i < meshes.size(); i++)
+   for (i = 0; i < meshes.size(); i++)
       meshes[i]->render();
 
    glDisable(GL_BLEND);
