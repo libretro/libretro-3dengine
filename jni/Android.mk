@@ -22,7 +22,7 @@ CORE_DIR := ..
 include $(CORE_DIR)/Makefile.common
 
 LOCAL_SRC_FILES += $(SOURCES_CXX) $(SOURCES_C)
-LOCAL_CXXFLAGS += -O2 -Wall -ffast-math -fexceptions -DGLES -DANDROID $(INCFLAGS)
+LOCAL_CXXFLAGS += -O2 -Wall -ffast-math -fexceptions -DHAVE_OPENGLES -DANDROID $(INCFLAGS)
 LOCAL_CFLAGS += $(INCFLAGS)
 LOCAL_LDLIBS += -lz -llog -lGLESv2
 

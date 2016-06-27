@@ -155,8 +155,8 @@ CXXFLAGS += $(INCFLAGS)
 
 LIBS += -lz
 ifeq ($(GLES), 1)
-   CXXFLAGS += -DGLES
-   CFLAGS += -DGLES
+   CXXFLAGS += -DHAVE_OPENGLES
+   CFLAGS += -DHAVE_OPENGLES
 ifneq (,$(findstring ios,$(platform)))
    LIBS += $(GL_LIB)
 else

@@ -23,7 +23,7 @@
 #include <stdlib.h>
 #include <stdio.h>
 
-#ifndef GLES
+#ifndef HAVE_OPENGLES
 #include "gli/gli.hpp"
 #include "gli/gtx/gl_texture2d.hpp"
 #endif
@@ -59,7 +59,7 @@ namespace GL
                GL_TEXTURE_MAG_FILTER, GL_LINEAR);
          SYM(glTexParameteri)(GL_TEXTURE_2D,
                GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
-#ifndef GLES
+#ifndef HAVE_OPENGLES
          GLint max = 0.0f;
          SYM(glGetIntegerv)(GL_MAX_TEXTURE_MAX_ANISOTROPY_EXT, &max);
          if (log_cb)
@@ -78,7 +78,7 @@ namespace GL
       unbind();
    }
 
-#ifndef GLES
+#ifndef HAVE_OPENGLES
    void Texture::load_dds(const std::string& path)
    {
       if (!tex)
@@ -118,7 +118,7 @@ namespace GL
 
       string ext = Path::ext(path);
 
-#ifndef GLES
+#ifndef HAVE_OPENGLES
       if (ext == "dds")
          load_dds(path);
       else

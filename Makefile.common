@@ -1,4 +1,4 @@
-INCFLAGS += -I$(CORE_DIR) -I$(CORE_DIR)/utils -I$(CORE_DIR)/helpers
+INCFLAGS += -I$(CORE_DIR) -I$(CORE_DIR)/utils -I$(CORE_DIR)/helpers -I$(CORE_DIR)/include
 
 SOURCES_CXX  := $(CORE_DIR)/engine/mesh.cpp \
 					 $(CORE_DIR)/engine/texture.cpp \

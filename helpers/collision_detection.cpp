@@ -296,7 +296,7 @@ void coll_test_crash_detection(void)
    float  b = point_crash_time(pos, vec3(1, 0, 0), vec3(2, 2, 0));
    float  c = point_crash_time(pos, vec3(1, 0, 0), vec3(1.0, 0.5, 0.0));
    float  d = point_crash_time(pos, vec3(0, 1, 0), vec3(0.5, 1.0, 0.0));
-   float  e = line_crash_time(pos, vec3(1, 0, 0), vec3(4, -1, 0), vec3(4, 1, 0), out_pos);
+   float  e = line_crash_time(pos,  vec3(1, 0, 0), vec3(4, -1, 0), vec3(4, 1, 0), out_pos);
 
    assert(fequal(a, 2.0f));
    assert(fequal(b, 10.0f));

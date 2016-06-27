@@ -61,7 +61,7 @@ static bool display_position;
 
 #define BASE_WIDTH 320
 #define BASE_HEIGHT 240
-#ifdef GLES
+#ifdef HAVE_OPENGLES
 #define MAX_WIDTH 1024
 #define MAX_HEIGHT 1024
 #else
@@ -129,7 +129,7 @@ void retro_set_environment(retro_environment_t cb)
    struct retro_variable variables[] = {
       { "3dengine-resolution",
          "Internal resolution; 320x240|360x480|480x272|512x384|512x512|640x240|640x448|640x480|720x576|800x600|960x720|1024x768"
-#ifndef GLES
+#ifndef HAVE_OPENGLES
       "|1024x1024|1280x720|1280x960|1600x1200|1920x1080|1920x1440|1920x1600|2048x1152|2048x1536|2048x2048|320x240"
 #endif
       },
@@ -311,7 +311,7 @@ static uint8_t *convert_buffer;
 #define GL_UNPACK_ROW_LENGTH  0x0CF2
 #endif
 
-#ifdef GLES
+#ifdef HAVE_OPENGLES
 #define INTERNAL_FORMAT GL_BGRA_EXT
 #define TEX_TYPE        GL_BGRA_EXT
 #define TEX_FORMAT      GL_UNSIGNED_BYTE
@@ -511,7 +511,7 @@ bool retro_load_game(const struct retro_game_info *info)
       }
    }
 
-#ifdef GLES
+#ifdef HAVE_OPENGLES
    hw_render.context_type = RETRO_HW_CONTEXT_OPENGLES2;
 #else
    hw_render.context_type = RETRO_HW_CONTEXT_OPENGL;
@@ -523,7 +523,7 @@ bool retro_load_game(const struct retro_game_info *info)
    if (!environ_cb(RETRO_ENVIRONMENT_SET_HW_RENDER, &hw_render))
       return false;
 
-#ifdef GLES
+#ifdef HAVE_OPENGLES
    if (camera_enable && camera_cb.caps & (1 << RETRO_CAMERA_BUFFER_RAW_FRAMEBUFFER) && !gl_query_extension("BGRA8888"))
    {
       if (log_cb)

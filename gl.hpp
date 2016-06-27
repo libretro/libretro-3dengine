@@ -23,7 +23,7 @@
 #endif
 
 #define GL_GLEXT_PROTOTYPES
-#if defined(GLES)
+#if defined(HAVE_OPENGLES)
 #ifdef IOS
 #include <OpenGLES/ES2/gl.h>
 #include <OpenGLES/ES2/glext.h>
@@ -49,7 +49,7 @@
 #define decltype(type) typeof(type)
 #endif
 
-#ifdef GLES
+#ifdef HAVE_OPENGLES
 #define SYM(sym) sym
 #else
 #define SYM(sym) (::GL::symbol<decltype(&sym)>(#sym))
