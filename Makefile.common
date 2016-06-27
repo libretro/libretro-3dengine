@@ -13,6 +13,21 @@ SOURCES_C    := $(CORE_DIR)/utils/rpng.c \
 					 $(CORE_DIR)/utils/picojpeg.c \
 					 $(CORE_DIR)/helpers/location_math.c \
 					 $(CORE_DIR)/utils/picojpeg-util.c \
+					 $(CORE_DIR)/libretro-common/features/features_cpu.c \
+					 $(CORE_DIR)/libretro-common/formats/image_texture.c \
+					 $(CORE_DIR)/libretro-common/formats/image_transfer.c \
+					 $(CORE_DIR)/libretro-common/formats/bmp/rbmp.c \
+					 $(CORE_DIR)/libretro-common/formats/jpeg/rjpeg.c \
+					 $(CORE_DIR)/libretro-common/formats/png/rpng.c \
+					 $(CORE_DIR)/libretro-common/formats/tga/rtga.c \
+					 $(CORE_DIR)/libretro-common/file/nbio/nbio_stdio.c \
+					 $(CORE_DIR)/libretro-common/file/archive_file.c \
+					 $(CORE_DIR)/libretro-common/file/archive_file_zlib.c \
+					 $(CORE_DIR)/libretro-common/file/file_path.c \
+					 $(CORE_DIR)/libretro-common/file/retro_stat.c \
+					 $(CORE_DIR)/libretro-common/streams/file_stream.c \
+					 $(CORE_DIR)/libretro-common/compat/compat_strl.c \
+					 $(CORE_DIR)/libretro-common/lists/string_list.c \
 					 $(CORE_DIR)/libretro-common/glsym/rglgen.c
 
 ifeq ($(GLES),1)
