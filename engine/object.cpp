@@ -70,55 +70,61 @@ namespace OBJ
          const vector<vec3>& normal,
          const vector<vec2>& tex)
    {
+      unsigned i;
+      vector<vector<string> > verts;
       vector<string> vertices = String::split(data, " ");
+
       if (vertices.size() > 3)
          vertices.resize(3);
 
-      vector<vector<string> > verts;
-      for (unsigned i = 0; i < vertices.size(); i++)
+      for (i = 0; i < vertices.size(); i++)
       {
          Vertex out_vertex;
 
          vector<string> coords = String::split(vertices[i], "/", true);
-         if (coords.size() == 1) // Vertex only
-         {
-            size_t coord = translate_index(String::stoi(coords[0]), vertex.size());
+         size_t coord_vert     = translate_index(String::stoi(coords[0]), vertex.size());
 
-            if (coord && vertex.size() >= coord)
-               out_vertex.vert = vertex[coord - 1];
-         }
-         else if (coords.size() == 2) // Vertex/Texcoord
+         switch (coords.size())
          {
-            size_t coord_vert = translate_index(String::stoi(coords[0]), vertex.size());
-            size_t coord_tex  = translate_index(String::stoi(coords[1]), tex.size());
+            case 1: /* Vertex only */
+               if (coord_vert && vertex.size() >= coord_vert)
+                  out_vertex.vert = vertex[coord_vert - 1];
+               break;
+            case 2: /* Vertex/Texcoord */
+               {
+                  size_t coord_tex  = translate_index(String::stoi(coords[1]), tex.size());
 
-            if (coord_vert && vertex.size() >= coord_vert)
-               out_vertex.vert = vertex[coord_vert - 1];
-            if (coord_tex && tex.size() >= coord_tex)
-               out_vertex.tex = tex[coord_tex - 1];
-         }
-         else if (coords.size() == 3 && coords[1].size()) // Vertex/Texcoord/Normal
-         {
-            size_t coord_vert   = translate_index(String::stoi(coords[0]), vertex.size());
-            size_t coord_tex    = translate_index(String::stoi(coords[1]), tex.size());
-            size_t coord_normal = translate_index(String::stoi(coords[2]), normal.size());
+                  if (coord_vert && vertex.size() >= coord_vert)
+                     out_vertex.vert = vertex[coord_vert - 1];
+                  if (coord_tex && tex.size() >= coord_tex)
+                     out_vertex.tex = tex[coord_tex - 1];
+               }
+               break;
+            case 3:
+               if (coords[1].size()) /* Vertex/Texcoord/Normal */
+               {
+                  size_t coord_tex    = translate_index(String::stoi(coords[1]), tex.size());
+                  size_t coord_normal = translate_index(String::stoi(coords[2]), normal.size());
 
-            if (coord_vert && vertex.size() >= coord_vert)
-               out_vertex.vert = vertex[coord_vert - 1];
-            if (coord_tex && tex.size() >= coord_tex)
-               out_vertex.tex = tex[coord_tex - 1];
-            if (coord_normal && normal.size() >= coord_normal)
-               out_vertex.normal = normal[coord_normal - 1];
-         }
-         else if (coords.size() == 3 && !coords[1].size()) // Vertex//Normal
-         {
-            size_t coord_vert   = translate_index(String::stoi(coords[0]), vertex.size());
-            size_t coord_normal = translate_index(String::stoi(coords[2]), normal.size());
+                  if (coord_vert && vertex.size() >= coord_vert)
+                     out_vertex.vert = vertex[coord_vert - 1];
+                  if (coord_tex && tex.size() >= coord_tex)
+                     out_vertex.tex = tex[coord_tex - 1];
+                  if (coord_normal && normal.size() >= coord_normal)
+                     out_vertex.normal = normal[coord_normal - 1];
+               }
+               else /* Vertex//Normal */
+               {
+                  size_t coord_normal = translate_index(String::stoi(coords[2]), normal.size());
 
-            if (coord_vert && vertex.size() >= coord_vert)
-               out_vertex.vert = vertex[coord_vert - 1];
-            if (coord_normal && normal.size() >= coord_normal)
-               out_vertex.normal = normal[coord_normal - 1];
+                  if (coord_vert && vertex.size() >= coord_vert)
+                     out_vertex.vert = vertex[coord_vert - 1];
+                  if (coord_normal && normal.size() >= coord_normal)
+                     out_vertex.normal = normal[coord_normal - 1];
+               }
+               break;
+            default:
+               break;
          }
 
          vertices_buffer.push_back(out_vertex);
@@ -128,15 +134,15 @@ namespace OBJ
    static map<string, Material> parse_mtllib(const string& path, map<string, std1::shared_ptr<Texture> >& textures)
    {
       map<string, Material> materials;
+      Material current;
+      string current_mtl;
+      string line;
 
       ifstream file(path.c_str(), ios::in);
       if (!file.is_open())
          return materials;
 
-      Material current;
-      string current_mtl;
-
-      for (string line; getline(file, line); )
+      for (; getline(file, line); )
       {
          line = String::strip(line);
 
@@ -193,24 +199,25 @@ namespace OBJ
 
    vector<std1::shared_ptr<Mesh> > load_from_file(const string& path)
    {
-      ifstream file(path.c_str(), ios::in);
-      vector<std1::shared_ptr<Mesh> > meshes;
-      if (!file.is_open())
-         return meshes;
-
       vector<vec3> vertex;
       vector<vec3> normal;
       vector<vec2> tex;
 
       vector<Vertex> vertices;
 
-      // Texture cache.
+      /* Texture cache. */
       map<string, std1::shared_ptr<Texture> > textures;
       Material current_material;
+      string line;
 
       map<string, Material> materials;
+      ifstream file(path.c_str(), ios::in);
+      vector<std1::shared_ptr<Mesh> > meshes;
 
-      for (string line; getline(file, line); )
+      if (!file.is_open())
+         return meshes;
+
+      for (; getline(file, line); )
       {
          line = String::strip(line);
 
