@@ -87,14 +87,16 @@ namespace GL
 
    Shader::~Shader()
    {
+      GLsizei count;
+      GLsizei i;
+      GLuint shaders[2];
+
       if (renderer_dead_state)
          return;
 
-      GLsizei count;
-      GLuint shaders[2];
-
       glGetAttachedShaders(prog, 2, &count, shaders);
-      for (GLsizei i = 0; i < count; i++)
+
+      for (i = 0; i < count; i++)
       {
          glDetachShader(prog, shaders[i]);
          glDeleteShader(shaders[i]);

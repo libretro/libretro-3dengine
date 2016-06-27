@@ -81,12 +81,12 @@ namespace GL
 #ifndef HAVE_OPENGLES
    void Texture::load_dds(const std::string& path)
    {
+      unsigned levels = 0;
       if (!tex)
          glGenTextures(1, &tex);
 
       if (log_cb)
          log_cb(RETRO_LOG_INFO, "Loading DDS: %s.\n", path.c_str());
-      unsigned levels = 0;
       tex = gli::createTexture2D(path, &levels);
 
       bind();
@@ -113,9 +113,6 @@ namespace GL
 
    Texture::Texture(const std::string& path) : tex(0)
    {
-      uint8_t* data = NULL;
-      unsigned width = 0, height = 0;
-
       string ext = Path::ext(path);
 
 #ifndef HAVE_OPENGLES
@@ -124,7 +121,11 @@ namespace GL
       else
 #endif
       {
-         bool ret = false;
+         unsigned width  = 0;
+         unsigned height = 0;
+         bool ret        = false;
+         uint8_t* data   = NULL;
+
          if (ext == "png")
          {
             ret = rpng_load_image_rgba(path.c_str(),
