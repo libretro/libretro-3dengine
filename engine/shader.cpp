@@ -115,28 +115,30 @@ namespace GL
 
    GLint Shader::uniform(const char* sym)
    {
-      GLint ret = -1;
-
       std::map<std::string, GLint>::iterator itr = map.find(sym);
-      if (itr == map.end())
-         map[sym] = ret = glGetUniformLocation(prog, sym);
-      else
-         ret = itr->second;
 
-      return ret;
+      if (itr == map.end())
+      {
+         GLint ret = glGetUniformLocation(prog, sym);
+         map[sym]  = ret;
+         return ret;
+      }
+
+      return itr->second;
    }
 
    GLint Shader::attrib(const char* sym)
    {
-      GLint ret = -1;
-
       std::map<std::string, GLint>::iterator itr = map.find(sym);
-      if (itr == map.end())
-         map[sym] = ret = glGetAttribLocation(prog, sym);
-      else
-         ret = itr->second;
 
-      return ret;
+      if (itr == map.end())
+      {
+         GLint ret = glGetAttribLocation(prog, sym);
+         map[sym]  = ret;
+         return ret;
+      }
+
+      return itr->second;
    }
 }
 
