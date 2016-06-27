@@ -34,7 +34,7 @@ namespace std1 = compat;
 namespace std1 = std::tr1;
 #endif
 
-#include "libretro.h"
+#include <libretro.h>
 
 extern retro_log_printf_t log_cb;
 extern struct retro_sensor_interface sensor_cb;
