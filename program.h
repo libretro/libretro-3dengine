@@ -18,7 +18,6 @@
 #ifndef PROGRAM_H__
 #define PROGRAM_H__
 
-#include "libretro.h"
 #include "gl.hpp"
 #include "glm/glm.hpp"
 #include "glm/gtc/matrix_transform.hpp"
@@ -36,8 +35,6 @@ extern GLuint tex;
 
 extern bool location_camera_control_enable;
 extern bool sensor_enable;
-
-#define ARRAY_SIZE(a) (sizeof(a) / sizeof((a)[0]))
 
 typedef struct
 {

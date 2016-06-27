@@ -24,6 +24,7 @@
 #include "picojpeg.h"
 
 #include <glsym/glsym.h>
+#include <retro_miscellaneous.h>
 
 #include "location_math.h"
 
