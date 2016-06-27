@@ -21,7 +21,7 @@
 #include "../engine/texture.hpp"
 #include "../engine/object.hpp"
 #include "collision_detection.hpp"
-#include "location_math.hpp"
+#include "location_math.h"
 
 #include <vector>
 #include <string.h>

@@ -23,7 +23,7 @@
 #include "rtga.h"
 #include "picojpeg.h"
 
-#include "location_math.hpp"
+#include "location_math.h"
 
 #include <vector>
 
