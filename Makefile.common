@@ -9,9 +9,7 @@ SOURCES_CXX  := $(CORE_DIR)/engine/mesh.cpp \
 					 $(CORE_DIR)/program/instancingviewer.cpp \
 					 $(CORE_DIR)/program/modelviewer.cpp \
 					 $(CORE_DIR)/libretro.cpp
-SOURCES_C    := $(CORE_DIR)/utils/cjson.c \
-					 $(CORE_DIR)/utils/rpng.c \
-					 $(CORE_DIR)/utils/base64.c \
+SOURCES_C    := $(CORE_DIR)/utils/rpng.c \
 					 $(CORE_DIR)/utils/picojpeg.c \
 					 $(CORE_DIR)/helpers/location_math.c \
 					 $(CORE_DIR)/utils/picojpeg-util.c \
