@@ -1,4 +1,5 @@
 LOCAL_PATH := $(call my-dir)
+GLES = 1
 
 include $(CLEAR_VARS)
 
@@ -22,8 +23,9 @@ CORE_DIR := ..
 include $(CORE_DIR)/Makefile.common
 
 LOCAL_SRC_FILES += $(SOURCES_CXX) $(SOURCES_C)
-LOCAL_CXXFLAGS += -O2 -Wall -ffast-math -fexceptions -DHAVE_OPENGLES -DANDROID $(INCFLAGS)
-LOCAL_CFLAGS += $(INCFLAGS)
+COMMONFLAGS     := -DHAVE_OPENGLES -DHAVE_OPENGLES2 -DANDROID
+LOCAL_CXXFLAGS += -O2 -Wall -ffast-math -fexceptions $(COMMONFLAGS) $(INCFLAGS)
+LOCAL_CFLAGS += $(COMMONFLAGS) $(INCFLAGS)
 LOCAL_LDLIBS += -lz -llog -lGLESv2
 
 include $(BUILD_SHARED_LIBRARY)

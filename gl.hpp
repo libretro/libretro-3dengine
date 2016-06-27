@@ -22,26 +22,10 @@
 #include <windows.h>
 #endif
 
-#define GL_GLEXT_PROTOTYPES
-#if defined(HAVE_OPENGLES)
-#ifdef IOS
-#include <OpenGLES/ES2/gl.h>
-#include <OpenGLES/ES2/glext.h>
-#else
-#include <GLES2/gl2.h>
-#include <GLES2/gl2ext.h>
-#endif
-#elif defined(__APPLE__)
-#include <OpenGL/gl.h>
-#include <OpenGL/glext.h>
-#else
-#include <GL/gl.h>
-#include <GL/glext.h>
-#endif
-
 #include <stdio.h>
 #include <string>
 #include <libretro.h>
+#include <glsym/glsym.h>
 #include <glsym/rglgen_headers.h>
 #include "shared.hpp"
 
