@@ -39,16 +39,11 @@
 #include <GL/glext.h>
 #endif
 
-#include <map>
 #include <stdio.h>
 #include <string>
-#include "libretro.h"
+#include <libretro.h>
 #include <glsym/rglgen_headers.h>
 #include "shared.hpp"
-
-#if defined(__GNUC__) && !defined(__clang__) || defined(__clang__) && defined(OSX)
-#define decltype(type) typeof(type)
-#endif
 
 extern bool renderer_dead_state;
 

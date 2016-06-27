@@ -17,7 +17,6 @@
  */
 
 #include "libretro.h"
-#include "libretro_private.h"
 #include <stdint.h>
 #include <string.h>
 #include <math.h>
@@ -30,8 +29,6 @@
 #include "program.h"
 
 #include "gl.hpp"
-#include "glm/glm.hpp"
-#include "glm/gtc/matrix_transform.hpp"
 #include "program.h"
 
 #define FPS 60.0

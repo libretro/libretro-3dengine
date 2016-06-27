@@ -19,6 +19,7 @@
 #define SHADER_HPP__
 
 #include "gl.hpp"
+#include <map>
 
 namespace GL
 {
