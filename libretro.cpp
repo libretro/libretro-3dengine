@@ -217,9 +217,9 @@ static void update_variables(void)
 
    if (environ_cb(RETRO_ENVIRONMENT_GET_VARIABLE, &var) && var.value)
    {
-      if (strcmp(var.value, "disabled") == 0)
+      if (!strcmp(var.value, "disabled"))
          display_position = false;
-      else if (strcmp(var.value, "enabled") == 0)
+      else if (!strcmp(var.value, "enabled"))
          display_position = true;
    }
 
@@ -228,9 +228,9 @@ static void update_variables(void)
 
    if (environ_cb(RETRO_ENVIRONMENT_GET_VARIABLE, &var) && var.value)
    {
-      if (strcmp(var.value, "disabled") == 0)
+      if (!strcmp(var.value, "disabled"))
          location_camera_control_enable = false;
-      else if (strcmp(var.value, "enabled") == 0)
+      else if (!strcmp(var.value, "enabled"))
          location_camera_control_enable = true;
    }
 
