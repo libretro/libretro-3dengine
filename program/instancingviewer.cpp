@@ -219,16 +219,18 @@ static void display_cubes_array(void)
 
    if (update)
    {
+      unsigned x, y, z;
+
       update = false;
 
       std::vector<Cube> cubes;
       cubes.resize(cube_size * cube_size * cube_size);
 
-      for (unsigned x = 0; x < cube_size; x++)
+      for (x = 0; x < cube_size; x++)
       {
-         for (unsigned y = 0; y < cube_size; y++)
+         for (y = 0; y < cube_size; y++)
          {
-            for (unsigned z = 0; z < cube_size; z++)
+            for (z = 0; z < cube_size; z++)
             {
                Cube &cube = cubes[((cube_size * cube_size * z) + (cube_size * y) + x)];
 
@@ -627,8 +629,6 @@ static void instancingviewer_update_variables(retro_environment_t environ_cb)
    }
 }
 
-
-
 static void instancingviewer_run(void)
 {
    vec3 look_dir = instancingviewer_check_input();
@@ -699,13 +699,13 @@ static void instancingviewer_run(void)
 
 static void instancingviewer_load_game(const struct retro_game_info *info)
 {
-   player_pos = vec3(0, 0, 0);
-   texpath = info->path;
-   first_init = false;
+   player_pos      = vec3(0, 0, 0);
+   texpath         = info->path;
+   first_init      = false;
 
-   light_r = 0;
-   light_g = 150;
-   light_b = 15;
+   light_r         = 0;
+   light_g         = 150;
+   light_b         = 15;
    ambient_light_r = 0.2;
    ambient_light_g = 0.2;
    ambient_light_b = 0.2;

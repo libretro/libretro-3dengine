@@ -51,9 +51,10 @@ static bool update;
 
 static vec3 player_size(0.4f, 0.8f, 0.4f);
 
-enum {
+enum
+{
    MODE_MODELVIEWER = 0,
-   MODE_SCENEWALKER = 1,
+   MODE_SCENEWALKER = 1
 };
 
 unsigned mode_engine = MODE_MODELVIEWER;
@@ -531,7 +532,9 @@ static void init_mesh(const std::string& path)
       "  gl_FragColor = vec4(diffuse + ambient + specular, uMTLAlphaMod * colorDiffuseFull.a);\n"
       "}";
    
-   std1::shared_ptr<GL::Shader> shader(new GL::Shader(vertex_shader, (mode_engine == MODE_SCENEWALKER) ? fragment_shader_scene : ((discard_hack_enable) ? fragment_shader_avoid_discard_hack : fragment_shader)));
+   std1::shared_ptr<GL::Shader> shader(new GL::Shader(vertex_shader, (mode_engine == MODE_SCENEWALKER) 
+               ? fragment_shader_scene : ((discard_hack_enable) 
+               ? fragment_shader_avoid_discard_hack : fragment_shader)));
    meshes = OBJ::load_from_file(path);
 
    mat4 projection;
