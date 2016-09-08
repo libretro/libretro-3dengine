@@ -1,7 +1,4 @@
-
-ifneq ($(EMSCRIPTEN),)
-   platform = emscripten
-endif
+STATIC_LINKING=0
 
 ifeq ($(platform),)
 platform = unix
@@ -16,10 +13,7 @@ else ifneq ($(findstring win,$(shell uname -a)),)
 endif
 endif
 
-PKG_CONFIG = pkg-config
-
 TARGET_NAME := 3dengine
-
 
 ifneq (,$(findstring unix,$(platform)))
    TARGET := $(TARGET_NAME)_libretro.so
@@ -30,6 +24,7 @@ ifneq (,$(findstring gles,$(platform)))
 else
    GL_LIB := -lGL
 endif
+
 else ifneq (,$(findstring osx,$(platform)))
    TARGET := $(TARGET_NAME)_libretro.dylib
    fpic := -fPIC
@@ -42,10 +37,11 @@ else ifneq (,$(findstring osx,$(platform)))
    OSXVER = `sw_vers -productVersion | cut -d. -f 2`
    OSX_LT_MAVERICKS = `(( $(OSXVER) <= 9)) && echo "YES"`
    fpic += -fPIC -mmacosx-version-min=10.1
+
 else ifneq (,$(findstring armv,$(platform)))
+   TARGET := $(TARGET_NAME)_libretro.so
    CC = gcc
    CXX = g++
-   TARGET := $(TARGET_NAME)_libretro.so
    fpic := -fPIC
    SHARED := -shared -Wl,--version-script=link.T -Wl,--no-undefined
    CXXFLAGS += -I.
@@ -83,6 +79,7 @@ LIBRARY_NAME = $(TARGET_NAME)_libretro_ios
 INCFLAGS += -Iinclude/compat
 DEFINES += -DIOS
 GLES = 1
+
 else ifneq (,$(findstring ios,$(platform)))
    TARGET := $(TARGET_NAME)_libretro_ios.dylib
    GLES := 1
@@ -110,8 +107,9 @@ else
    CFLAGS += -miphoneos-version-min=5.0
    CXXFLAGS += -miphoneos-version-min=5.0
 endif
+
 else ifneq (,$(findstring qnx,$(platform)))
-   TARGET := $(TARGET_NAME)_libretro_qnx.so
+   TARGET := $(TARGET_NAME)_libretro_$(platform).so
    fpic := -fPIC
    SHARED := -lcpp -lm -shared -Wl,-version-script=link.T -Wl,-no-undefined
 	CC = qcc -Vgcc_ntoarmv7le_cpp
@@ -120,9 +118,13 @@ else ifneq (,$(findstring qnx,$(platform)))
    GLES = 1
    INCFLAGS += -Iinclude/compat
    LIBS := -lz
+
 else ifeq ($(platform), emscripten)
-   TARGET := $(TARGET_NAME)_libretro_emscripten.bc
+   TARGET := $(TARGET_NAME)_libretro_$(platform).bc
+   INCFLAGS += -Iinclude/compat
+	STATIC_LINKING=1
    GLES := 1
+
 else
    CC = gcc
    TARGET := $(TARGET_NAME)_libretro.dll
@@ -184,7 +186,11 @@ else
 all: $(TARGET)
 
 $(TARGET): $(OBJECTS)
+ifeq ($(STATIC_LINKING),1)
+	$(AR) rcs $@ $(OBJECTS)
+else
 	$(CXX) $(fpic) $(SHARED) $(INCLUDES) -o $@ $(OBJECTS) $(LDFLAGS) $(LIBS) -lm
+endif
 
 clean:
 	rm -f $(OBJECTS) $(TARGET)
