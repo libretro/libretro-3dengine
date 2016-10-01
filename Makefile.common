@@ -27,6 +27,7 @@ SOURCES_C    := $(CORE_DIR)/utils/rpng.c \
 					 $(CORE_DIR)/libretro-common/file/retro_stat.c \
 					 $(CORE_DIR)/libretro-common/streams/file_stream.c \
 					 $(CORE_DIR)/libretro-common/compat/compat_strl.c \
+					 $(CORE_DIR)/libretro-common/compat/compat_posix_string.c \
 					 $(CORE_DIR)/libretro-common/lists/string_list.c \
 					 $(CORE_DIR)/libretro-common/gfx/math/vector_2.c \
 					 $(CORE_DIR)/libretro-common/gfx/math/vector_3.c \
