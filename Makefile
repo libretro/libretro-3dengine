@@ -14,6 +14,10 @@ endif
 endif
 
 TARGET_NAME := 3dengine
+GIT_VERSION := " $(shell git rev-parse --short HEAD || echo unknown)"
+ifneq ($(GIT_VERSION)," unknown")
+	CXXFLAGS += -DGIT_VERSION=\"$(GIT_VERSION)\"
+endif
 
 ifneq (,$(findstring unix,$(platform)))
    TARGET := $(TARGET_NAME)_libretro.so
