@@ -410,6 +410,9 @@ bool retro_load_game(const struct retro_game_info *info)
 {
    retro_variable var;
 
+   if (!info)
+      return false;
+
    strcpy(retro_path_info, info->path);
    if (strstr(info->path, ".obj") || strstr(info->path, ".mtl"))
       engine_program_cb = &engine_program_modelviewer;
