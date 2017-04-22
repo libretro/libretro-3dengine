@@ -1,7 +1,7 @@
 /* Copyright  (C) 2010-2017 The RetroArch team
  *
  * ---------------------------------------------------------------------------------------
- * The following license statement only applies to this file (vector_3.h).
+ * The following license statement only applies to this file (vector_4.h).
  * ---------------------------------------------------------------------------------------
  *
  * Permission is hereby granted, free of charge,
@@ -20,8 +20,8 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
 
-#ifndef __LIBRETRO_SDK_GFX_MATH_VECTOR_3_H__
-#define __LIBRETRO_SDK_GFX_MATH_VECTOR_3_H__
+#ifndef __LIBRETRO_SDK_GFX_MATH_VECTOR_4_H__
+#define __LIBRETRO_SDK_GFX_MATH_VECTOR_4_H__
 
 #include <stdint.h>
 #include <math.h>
@@ -30,38 +30,31 @@
 
 RETRO_BEGIN_DECLS
 
-typedef float vec3_t[3];
+typedef float vec4_t[4];
 
-#define vec3_dot(a, b) (a[0] * b[0] + a[1] * b[1] + a[2] * b[2])
-
-#define vec3_cross(dst, a, b)  \
-   dst[0] = a[1]*b[2] - a[2]*b[1]; \
-   dst[1] = a[2]*b[0] - a[0]*b[2]; \
-   dst[2] = a[0]*b[1] - a[1]*b[0]
-
-#define vec3_length(a) sqrtf(vec3_dot(a,a))
-
-#define vec3_add(dst, src) \
+#define vec4_add(dst, src) \
    dst[0] += src[0]; \
    dst[1] += src[1]; \
-   dst[2] += src[2]
+   dst[2] += src[2]; \
+   dst[3] += src[3]
 
-#define vec3_subtract(dst, src) \
+#define vec4_subtract(dst, src) \
    dst[0] -= src[0]; \
    dst[1] -= src[1]; \
-   dst[2] -= src[2]
+   dst[2] -= src[2]; \
+   dst[3] -= src[3]
 
-#define vec3_scale(dst, scale) \
+#define vec4_scale(dst, scale) \
    dst[0] *= scale; \
    dst[1] *= scale; \
-   dst[2] *= scale
+   dst[2] *= scale; \
+   dst[3] *= scale
 
-#define vec3_copy(dst, src) \
+#define vec4_copy(dst, src) \
    dst[0] = src[0]; \
    dst[1] = src[1]; \
-   dst[2] = src[2]
-
-#define vec3_normalize(dst) vec3_scale(dst,1.0f / vec3_length(dst))
+   dst[2] = src[2]; \
+   dst[3] = src[3]
 
 RETRO_END_DECLS
 
