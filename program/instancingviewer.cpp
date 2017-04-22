@@ -25,6 +25,7 @@
 
 #include <glsym/glsym.h>
 #include <retro_miscellaneous.h>
+#include <gfx/math/vector_3.h>
 
 #include "location_math.h"
 
@@ -673,7 +674,13 @@ static void instancingviewer_run(void)
    glBindTexture(g_texture_target, tex);
 
    int lloc = glGetUniformLocation(prog, "light_pos");
-   vec3 light_pos(light_r, light_g, light_b);
+
+   vec3_t light_pos;
+
+   light_pos[0] = light_r;
+   light_pos[1] = light_g;
+   light_pos[2] = light_b;
+
    glUniform3fv(lloc, 1, &light_pos[0]);
 
    vec4 ambient_light(ambient_light_r, ambient_light_g, ambient_light_b, ambient_light_a);
