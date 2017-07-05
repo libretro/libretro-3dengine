@@ -128,25 +128,68 @@ else ifeq ($(platform), emscripten)
    INCFLAGS += -Iinclude/compat
 	STATIC_LINKING=1
    GLES := 1
+# Windows MSVC 2010 x64
+else ifeq ($(platform), windows_msvc2010_x64)
+	CC  = cl.exe
+	CXX = cl.exe
 
+PATH := $(shell IFS=$$'\n'; cygpath "$(VS100COMNTOOLS)../../VC/bin/amd64"):$(PATH)
+PATH := $(PATH):$(shell IFS=$$'\n'; cygpath "$(VS100COMNTOOLS)../IDE")
+LIB := $(shell IFS=$$'\n'; cygpath "$(VS100COMNTOOLS)../../VC/lib/amd64")
+INCLUDE := $(shell IFS=$$'\n'; cygpath "$(VS100COMNTOOLS)../../VC/include")
+
+WindowsSdkDir := $(shell reg query "HKLM\SOFTWARE\Microsoft\Microsoft SDKs\Windows\v7.0A" -v "InstallationFolder" | grep -o '[A-Z]:\\.*')lib/x64
+WindowsSdkDir ?= $(shell reg query "HKLM\SOFTWARE\Microsoft\Microsoft SDKs\Windows\v7.1A" -v "InstallationFolder" | grep -o '[A-Z]:\\.*')lib/x64
+
+WindowsSdkDirInc := $(shell reg query "HKLM\SOFTWARE\Microsoft\Microsoft SDKs\Windows\v7.0A" -v "InstallationFolder" | grep -o '[A-Z]:\\.*')Include
+WindowsSdkDirInc ?= $(shell reg query "HKLM\SOFTWARE\Microsoft\Microsoft SDKs\Windows\v7.1A" -v "InstallationFolder" | grep -o '[A-Z]:\\.*')Include
+
+
+INCFLAGS_PLATFORM = -I"$(WindowsSdkDirInc)"
+export INCLUDE := $(INCLUDE)
+export LIB := $(LIB);$(WindowsSdkDir)
+TARGET := $(TARGET_NAME)_libretro.dll
+PSS_STYLE :=2
+LDFLAGS += -DLL
+LIBS =
+# Windows MSVC 2010 x86
+else ifeq ($(platform), windows_msvc2010_x86)
+	CC  = cl.exe
+	CXX = cl.exe
+
+PATH := $(shell IFS=$$'\n'; cygpath "$(VS100COMNTOOLS)../../VC/bin"):$(PATH)
+PATH := $(PATH):$(shell IFS=$$'\n'; cygpath "$(VS100COMNTOOLS)../IDE")
+LIB := $(shell IFS=$$'\n'; cygpath -w "$(VS100COMNTOOLS)../../VC/lib")
+INCLUDE := $(shell IFS=$$'\n'; cygpath "$(VS100COMNTOOLS)../../VC/include")
+
+WindowsSdkDir := $(shell reg query "HKLM\SOFTWARE\Microsoft\Microsoft SDKs\Windows\v7.0A" -v "InstallationFolder" | grep -o '[A-Z]:\\.*')lib
+WindowsSdkDir ?= $(shell reg query "HKLM\SOFTWARE\Microsoft\Microsoft SDKs\Windows\v7.1A" -v "InstallationFolder" | grep -o '[A-Z]:\\.*')lib
+
+WindowsSdkDirInc := $(shell reg query "HKLM\SOFTWARE\Microsoft\Microsoft SDKs\Windows\v7.0A" -v "InstallationFolder" | grep -o '[A-Z]:\\.*')Include
+WindowsSdkDirInc ?= $(shell reg query "HKLM\SOFTWARE\Microsoft\Microsoft SDKs\Windows\v7.1A" -v "InstallationFolder" | grep -o '[A-Z]:\\.*')Include
+
+
+INCFLAGS_PLATFORM = -I"$(WindowsSdkDirInc)"
+export INCLUDE := $(INCLUDE)
+export LIB := $(LIB);$(WindowsSdkDir)
+TARGET := $(TARGET_NAME)_libretro.dll
+PSS_STYLE :=2
+LDFLAGS += -DLL
+LIBS =
+# Windows
 else
-   CC = gcc
    TARGET := $(TARGET_NAME)_libretro.dll
    SHARED := -shared -static-libgcc -static-libstdc++ -s -Wl,--version-script=link.T -Wl,--no-undefined
    GL_LIB := -L. -lopengl32
-   CXXFLAGS += -DGLEW_STATIC
 endif
 
 
 ifeq ($(DEBUG), 1)
    CXXFLAGS += -O0 -g
    CFLAGS += -O0 -g
-else ifeq ($(platform), emscripten)
-   CXXFLAGS += -O2
-   CFLAGS += -O2
 else
-   CXXFLAGS += -O3
-   CFLAGS += -O3
+   CXXFLAGS += -O2 -DNDEBUG
+   CFLAGS += -O2 -DNDEBUG
 endif
 
 CORE_DIR := .
@@ -172,11 +215,26 @@ else
    LIBS += $(GL_LIB)
 endif
 
+ifeq (,$(findstring msvc,$(platform)))
+LIBS += -lm
+endif
+
+OBJOUT   = -o
+LINKOUT  = -o 
+
+ifneq (,$(findstring msvc,$(platform)))
+	OBJOUT = -Fo
+	LINKOUT = -out:
+	LD = link.exe
+else
+	LD = $(CXX)
+endif
+
 %.o: %.cpp
-	$(CXX) $(CXXFLAGS) -c -o $@ $<
+	$(CXX) $(CXXFLAGS) -c $(OBJOUT)$@ $<
 
 %.o: %.c
-	$(CC) $(CFLAGS) -c -o $@ $<
+	$(CC) $(CFLAGS) -c $(OBJOUT)$@ $<
 
 ifeq ($(platform), theos_ios)
 COMMON_FLAGS := -DIOS $(COMMON_DEFINES) $(INCFLAGS) -I$(THEOS_INCLUDE_PATH) -Wno-error
@@ -193,7 +251,7 @@ $(TARGET): $(OBJECTS)
 ifeq ($(STATIC_LINKING),1)
 	$(AR) rcs $@ $(OBJECTS)
 else
-	$(CXX) $(fpic) $(SHARED) $(INCLUDES) -o $@ $(OBJECTS) $(LDFLAGS) $(LIBS) -lm
+	$(LD) $(fpic) $(SHARED) $(LINKOUT)$@ $(OBJECTS) $(LDFLAGS) $(LIBS)
 endif
 
 clean:
