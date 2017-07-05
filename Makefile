@@ -199,8 +199,8 @@ include Makefile.common
 OBJECTS := $(SOURCES_CXX:.cpp=.o) $(SOURCES_C:.c=.o)
 
 CXXFLAGS += -Wall $(fpic)
-CFLAGS += -Wall $(fpic) $(INCFLAGS)
-CXXFLAGS += $(INCFLAGS)
+CFLAGS += -Wall $(fpic) $(INCFLAGS) $(INCFLAGS_PLATFORM)
+CXXFLAGS += $(INCFLAGS) $(INCFLAGS_PLATFORM)
 
 LIBS += -lz
 ifeq ($(GLES), 1)
