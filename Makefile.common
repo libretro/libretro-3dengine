@@ -41,8 +41,6 @@ SOURCES_C += \
 				 $(CORE_DIR)/libretro-common/compat/compat_strl.c \
 				 $(CORE_DIR)/libretro-common/compat/compat_posix_string.c \
 				 $(CORE_DIR)/libretro-common/features/features_cpu.c \
-				 $(CORE_DIR)/libretro-common/formats/image_texture.c \
-				 $(CORE_DIR)/libretro-common/formats/image_transfer.c \
 				 $(CORE_DIR)/libretro-common/formats/bmp/rbmp.c \
 				 $(CORE_DIR)/libretro-common/formats/jpeg/rjpeg.c \
 				 $(CORE_DIR)/libretro-common/formats/tga/rtga.c \
