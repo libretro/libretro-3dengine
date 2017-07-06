@@ -49,7 +49,7 @@ else ifneq (,$(findstring armv,$(platform)))
    fpic := -fPIC
    SHARED := -shared -Wl,--version-script=link.T -Wl,--no-undefined
    CXXFLAGS += -I.
-   LIBS := -lz
+   LIBS :=
 ifneq (,$(findstring gles,$(platform)))
    GLES := 1
 else
@@ -121,7 +121,7 @@ else ifneq (,$(findstring qnx,$(platform)))
    AR = QCC -Vgcc_ntoarmv7le
    GLES = 1
    INCFLAGS += -Iinclude/compat
-   LIBS := -lz
+   LIBS :=
 
 else ifeq ($(platform), emscripten)
    TARGET := $(TARGET_NAME)_libretro_$(platform).bc
@@ -202,7 +202,6 @@ CXXFLAGS += -Wall $(fpic)
 CFLAGS += -Wall $(fpic) $(INCFLAGS) $(INCFLAGS_PLATFORM)
 CXXFLAGS += $(INCFLAGS) $(INCFLAGS_PLATFORM)
 
-LIBS += -lz
 ifeq ($(GLES), 1)
    CXXFLAGS += -DHAVE_OPENGLES
    CFLAGS += -DHAVE_OPENGLES
