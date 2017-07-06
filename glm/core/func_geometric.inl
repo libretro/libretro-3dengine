@@ -214,8 +214,6 @@ namespace glm
 		genType const & x
 	)
 	{
-		GLM_STATIC_ASSERT(detail::type<genType>::is_float, "'normalize' only accept floating-point inputs");
-
 		return x < genType(0) ? genType(-1) : genType(1);
 	}
 
