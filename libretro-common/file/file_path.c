@@ -429,7 +429,7 @@ void path_basedir(char *path)
    if (last)
       last[1] = '\0';
    else
-      snprintf(path, 3, ".%s", path_default_slash());
+      sprintf(path, ".%s", path_default_slash());
 }
 
 /**
