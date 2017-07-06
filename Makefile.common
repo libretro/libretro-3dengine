@@ -52,7 +52,6 @@ SOURCES_C += \
 				 $(CORE_DIR)/libretro-common/file/archive_file_zlib.c \
 				 $(CORE_DIR)/libretro-common/file/file_path.c \
 				 $(CORE_DIR)/libretro-common/streams/file_stream.c \
-				 $(CORE_DIR)/libretro-common/string/stdstring.c \
 				 $(CORE_DIR)/libretro-common/lists/string_list.c
 endif
 
