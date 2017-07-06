@@ -175,7 +175,7 @@ end:
 }
 
 // Paeth prediction filter.
-static inline int paeth(int a, int b, int c)
+static INLINE int paeth(int a, int b, int c)
 {
    int p = a + b - c;
    int pa = abs(p - a);
@@ -190,7 +190,7 @@ static inline int paeth(int a, int b, int c)
       return c;
 }
 
-static inline void copy_line_rgb(uint8_t *data, const uint8_t *decoded, unsigned width)
+static INLINE void copy_line_rgb(uint8_t *data, const uint8_t *decoded, unsigned width)
 {
    unsigned i;
    for (i = 0; i < width; i++)
@@ -202,7 +202,7 @@ static inline void copy_line_rgb(uint8_t *data, const uint8_t *decoded, unsigned
    }
 }
 
-static inline void copy_line_rgba(uint8_t *data, const uint8_t *decoded, unsigned width)
+static INLINE void copy_line_rgba(uint8_t *data, const uint8_t *decoded, unsigned width)
 {
    memcpy(data, decoded, width * sizeof(uint32_t));
 }

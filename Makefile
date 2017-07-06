@@ -196,6 +196,14 @@ CORE_DIR := .
 
 include Makefile.common
 
+ifeq (,$(findstring msvc,$(platform)))
+CFLAGS += -DINLINE="_inline"
+CXXFLAGS += -DINLINE="_inline"
+else
+CFLAGS += -DINLINE="inline"
+CXXFLAGS += -DINLINE="inline"
+endif
+
 OBJECTS := $(SOURCES_CXX:.cpp=.o) $(SOURCES_C:.c=.o)
 
 CXXFLAGS += -Wall $(fpic)
