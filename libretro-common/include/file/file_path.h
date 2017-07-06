@@ -1,4 +1,4 @@
-/* Copyright  (C) 2010-2015 The RetroArch team
+/* Copyright  (C) 2010-2017 The RetroArch team
  *
  * ---------------------------------------------------------------------------------------
  * The following license statement only applies to this file (file_path.h).
@@ -31,7 +31,6 @@
 #include <retro_common_api.h>
 
 #include <boolean.h>
-#include <retro_inline.h>
 
 RETRO_BEGIN_DECLS
 
@@ -72,7 +71,7 @@ bool path_is_compressed_file(const char *path);
  *
  * Returns: true (1) if path contains compressed file, otherwise false (0).
  **/
-bool path_contains_compressed_file(const char *path);
+#define path_contains_compressed_file(path) (path_get_archive_delim((path)) != NULL)
 
 /**
  * path_file_exists:
@@ -83,6 +82,18 @@ bool path_contains_compressed_file(const char *path);
  * Returns: true (1) if file already exists, otherwise false (0).
  */
 bool path_file_exists(const char *path);
+
+/**
+ * path_get_archive_delim:
+ * @path               : path
+ *
+ * Gets delimiter of an archive file. Only the first '#'
+ * after a compression extension is considered.
+ *
+ * Returns: pointer to the delimiter in the path if it contains
+ * a compressed file, otherwise NULL.
+ */
+const char *path_get_archive_delim(const char *path);
 
 /**
  * path_get_extension:
@@ -151,7 +162,7 @@ void path_resolve_realpath(char *buf, size_t size);
  *
  * Checks if @path is an absolute path or a relative path.
  *
- * Returns: true (1) if path is absolute, false (1) if path is relative.
+ * Returns: true if path is absolute, false if path is relative.
  **/
 bool path_is_absolute(const char *path);
 
@@ -193,6 +204,22 @@ void fill_pathname(char *out_path, const char *in_path,
  **/
 void fill_dated_filename(char *out_filename,
       const char *ext, size_t size);
+
+/**
+ * fill_str_dated_filename:
+ * @out_filename       : output filename
+ * @in_str             : input string
+ * @ext                : extension of output filename
+ * @size               : buffer size of output filename
+ *
+ * Creates a 'dated' filename prefixed by the string @in_str, and
+ * concatenates extension (@ext) to it.
+ *
+ * E.g.:
+ * out_filename = "RetroArch-{year}{month}{day}-{Hour}{Minute}{Second}.{@ext}"
+ **/
+void fill_str_dated_filename(char *out_filename,
+      const char *in_str, const char *ext, size_t size);
 
 /**
  * fill_pathname_noext:
@@ -251,6 +278,13 @@ void fill_pathname_dir(char *in_dir, const char *in_basename,
  **/
 void fill_pathname_base(char *out_path, const char *in_path, size_t size);
 
+void fill_pathname_base_noext(char *out_dir,
+      const char *in_path, size_t size);
+
+void fill_pathname_base_ext(char *out,
+      const char *in_path, const char *ext,
+      size_t size);
+
 /**
  * fill_pathname_basedir:
  * @out_dir            : output directory        
@@ -262,6 +296,9 @@ void fill_pathname_base(char *out_path, const char *in_path, size_t size);
  * @out_path will get path "./".
  **/
 void fill_pathname_basedir(char *out_path, const char *in_path, size_t size);
+
+void fill_pathname_basedir_noext(char *out_dir,
+      const char *in_path, size_t size);
 
 /**
  * fill_pathname_parent_dir:
@@ -304,18 +341,18 @@ void fill_pathname_resolve_relative(char *out_path, const char *in_refpath,
 void fill_pathname_join(char *out_path, const char *dir,
       const char *path, size_t size);
 
-/**
- * fill_string_join:
- * @out_path           : output path
- * @path               : path
- * @size               : size of output path
- *
- * Joins a string (@out_path) and path (@append) together.
- * Makes sure not to get  two consecutive slashes 
- * between directory and path.
- **/
-void fill_string_join(char *out_path,
-      const char *path, size_t size);
+void fill_pathname_join_special_ext(char *out_path,
+      const char *dir,  const char *path,
+      const char *last, const char *ext,
+      size_t size);
+
+void fill_pathname_join_concat(char *out_path,
+      const char *dir, const char *path, 
+      const char *concat,
+      size_t size);
+
+void fill_pathname_join_noext(char *out_path,
+      const char *dir, const char *path, size_t size);
 
 /**
  * fill_pathname_join_delim:
@@ -330,6 +367,10 @@ void fill_string_join(char *out_path,
  **/
 void fill_pathname_join_delim(char *out_path, const char *dir,
       const char *path, const char delim, size_t size);
+
+void fill_pathname_join_delim_concat(char *out_path, const char *dir,
+      const char *path, const char delim, const char *concat,
+      size_t size);
 
 /**
  * fill_short_pathname_representation:
@@ -349,6 +390,9 @@ void fill_pathname_join_delim(char *out_path, const char *dir,
 void fill_short_pathname_representation(char* out_rep,
       const char *in_path, size_t size);
 
+void fill_short_pathname_representation_noext(char* out_rep,
+      const char *in_path, size_t size);
+
 void fill_pathname_expand_special(char *out_path,
       const char *in_path, size_t size);
 
@@ -363,14 +407,11 @@ void fill_pathname_abbreviate_special(char *out_path,
  *
  * Returns: true (1) if character is a slash, otherwise false (0).
  */
-static INLINE bool path_char_is_slash(char c)
-{
 #ifdef _WIN32
-   return (c == '/') || (c == '\\');
+#define path_char_is_slash(c) (((c) == '/') || ((c) == '\\'))
 #else
-   return (c == '/');
+#define path_char_is_slash(c) ((c) == '/')
 #endif
-}
 
 /**
  * path_default_slash:
@@ -379,14 +420,11 @@ static INLINE bool path_char_is_slash(char c)
  *
  * Returns: default slash separator.
  */
-static INLINE const char *path_default_slash(void)
-{
 #ifdef _WIN32
-   return "\\";
+#define path_default_slash() "\\"
 #else
-   return "/";
+#define path_default_slash() "/"
 #endif
-}
 
 /** 
  * fill_pathname_slash:
@@ -411,6 +449,22 @@ void fill_pathname_application_path(char *buf, size_t size);
  * Returns: true (1) if directory could be created, otherwise false (0).
  **/
 bool path_mkdir(const char *dir);
+
+/**
+ * path_is_directory:
+ * @path               : path
+ *
+ * Checks if path is a directory.
+ *
+ * Returns: true (1) if path is a directory, otherwise false (0).
+ */
+bool path_is_directory(const char *path);
+
+bool path_is_character_special(const char *path);
+
+bool path_is_valid(const char *path);
+
+int32_t path_get_size(const char *path);
 
 RETRO_END_DECLS
 
