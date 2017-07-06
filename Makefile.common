@@ -32,8 +32,6 @@ SOURCES_C    := $(CORE_DIR)/utils/rpng.c \
 					 $(CORE_DIR)/libretro-common/file/file_path.c \
 					 $(CORE_DIR)/libretro-common/file/retro_stat.c \
 					 $(CORE_DIR)/libretro-common/streams/file_stream.c \
-					 $(CORE_DIR)/libretro-common/compat/compat_strl.c \
-					 $(CORE_DIR)/libretro-common/compat/compat_posix_string.c \
 					 $(CORE_DIR)/libretro-common/lists/string_list.c \
 					 $(CORE_DIR)/libretro-common/glsym/rglgen.c
 
@@ -53,6 +51,10 @@ SOURCES_C += $(DEPS_DIR)/zlib/adler32.c \
 				 $(DEPS_DIR)/zlib/trees.c \
 				 $(DEPS_DIR)/zlib/uncompr.c \
 				 $(DEPS_DIR)/zlib/zutil.c
+
+SOURCES_C += \
+				 $(CORE_DIR)/libretro-common/compat/compat_strl.c \
+				 $(CORE_DIR)/libretro-common/compat/compat_posix_string.c
 endif
 
 ifeq ($(GLES),1)
