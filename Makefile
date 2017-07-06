@@ -196,7 +196,7 @@ CORE_DIR := .
 
 include Makefile.common
 
-ifeq (,$(findstring msvc,$(platform)))
+ifneq (,$(findstring msvc,$(platform)))
 CFLAGS += -DINLINE="_inline"
 CXXFLAGS += -DINLINE="_inline"
 else
