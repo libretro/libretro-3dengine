@@ -210,15 +210,16 @@ static INLINE void copy_line_rgba(uint8_t *data, const uint8_t *decoded, unsigne
 static bool png_reverse_filter(uint8_t *data, const struct png_ihdr *ihdr,
       const uint8_t *inflate_buf, size_t inflate_buf_size)
 {
-   unsigned i, h;
+   unsigned i, h, pitch;
    bool ret = true;
+   uint8_t *prev_scanline, *decoded_scanline;
    unsigned bpp = ihdr->color_type == 2 ? 3 : 4;
    if (inflate_buf_size < (ihdr->width * bpp + 1) * ihdr->height)
       return false;
 
-   unsigned pitch = ihdr->width * bpp;
-   uint8_t *prev_scanline    = (uint8_t*)calloc(1, pitch);
-   uint8_t *decoded_scanline = (uint8_t*)calloc(1, pitch);
+   pitch = ihdr->width * bpp;
+   prev_scanline    = (uint8_t*)calloc(1, pitch);
+   decoded_scanline = (uint8_t*)calloc(1, pitch);
 
    if (!decoded_scanline || !decoded_scanline)
       GOTO_END_ERROR();
@@ -302,20 +303,9 @@ static bool png_append_idat(FILE *file, const struct png_chunk *chunk, struct id
 
 bool rpng_load_image_rgba(const char *path, uint8_t **data, unsigned *width, unsigned *height)
 {
-   long pos;
-   *data   = NULL;
-   *width  = 0;
-   *height = 0;
-
-   bool ret = true;
-   FILE *file = fopen(path, "rb");
-   if (!file)
-      return false;
-
-   fseek(file, 0, SEEK_END);
-   long file_len = ftell(file);
-   rewind(file);
-
+   long pos, file_len;
+   FILE *file;
+   bool ret      = true;
    bool has_ihdr = false;
    bool has_idat = false;
    bool has_iend = false;
@@ -327,6 +317,19 @@ bool rpng_load_image_rgba(const char *path, uint8_t **data, unsigned *width, uns
    struct png_ihdr ihdr = {0};
 
    char header[8];
+
+   *data   = NULL;
+   *width  = 0;
+   *height = 0;
+
+   file = fopen(path, "rb");
+   if (!file)
+      return false;
+
+   fseek(file, 0, SEEK_END);
+   file_len = ftell(file);
+   rewind(file);
+
    if (fread(header, 1, sizeof(header), file) != sizeof(header))
       GOTO_END_ERROR();
 
