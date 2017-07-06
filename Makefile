@@ -152,7 +152,7 @@ TARGET := $(TARGET_NAME)_libretro.dll
 PSS_STYLE :=2
 LDFLAGS += -DLL
 LIBS =
-GL_LIB = -opengl32.lib
+GL_LIB = opengl32.lib
 # Windows MSVC 2010 x86
 else ifeq ($(platform), windows_msvc2010_x86)
 	CC  = cl.exe
@@ -177,7 +177,7 @@ TARGET := $(TARGET_NAME)_libretro.dll
 PSS_STYLE :=2
 LDFLAGS += -DLL
 LIBS =
-GL_LIB = -opengl32.lib
+GL_LIB = opengl32.lib
 # Windows
 else
    TARGET := $(TARGET_NAME)_libretro.dll
