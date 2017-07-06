@@ -45,7 +45,6 @@ SOURCES_C += \
 				 $(CORE_DIR)/libretro-common/formats/image_transfer.c \
 				 $(CORE_DIR)/libretro-common/formats/bmp/rbmp.c \
 				 $(CORE_DIR)/libretro-common/formats/jpeg/rjpeg.c \
-				 $(CORE_DIR)/libretro-common/formats/png/rpng.c \
 				 $(CORE_DIR)/libretro-common/formats/tga/rtga.c \
 				 $(CORE_DIR)/libretro-common/file/nbio/nbio_stdio.c \
 				 $(CORE_DIR)/libretro-common/file/archive_file.c \
