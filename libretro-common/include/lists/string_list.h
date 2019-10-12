@@ -1,4 +1,4 @@
-/* Copyright  (C) 2010-2016 The RetroArch team
+/* Copyright  (C) 2010-2018 The RetroArch team
  *
  * ---------------------------------------------------------------------------------------
  * The following license statement only applies to this file (string_list.h).
@@ -41,6 +41,7 @@ union string_list_elem_attr
 struct string_list_elem
 {
    char *data;
+   void *userdata;
    union string_list_elem_attr attr;
 };
 
@@ -88,6 +89,19 @@ bool string_list_find_elem_prefix(const struct string_list *list,
 struct string_list *string_split(const char *str, const char *delim);
 
 /**
+ * string_separate:
+ * @str              : string to turn into a string list
+ * @delim            : delimiter character to use for separating the string.
+ *
+ * Creates a new string list based on string @str, delimited by @delim.
+ * Includes empty strings - i.e. two adjacent delimiters will resolve
+ * to a string list element of "".
+ *
+ * Returns: new string list if successful, otherwise NULL.
+ */
+struct string_list *string_separate(char *str, const char *delim);
+
+/**
  * string_list_new:
  *
  * Creates a new string list. Has to be freed manually.
@@ -110,6 +124,20 @@ bool string_list_append(struct string_list *list, const char *elem,
       union string_list_elem_attr attr);
 
 /**
+ * string_list_append_n:
+ * @list             : pointer to string list
+ * @elem             : element to add to the string list
+ * @length           : read at most this many bytes from elem
+ * @attr             : attributes of new element.
+ *
+ * Appends a new element to the string list.
+ *
+ * Returns: true (1) if successful, otherwise false (0).
+ **/
+bool string_list_append_n(struct string_list *list, const char *elem,
+      unsigned length, union string_list_elem_attr attr);
+
+/**
  * string_list_free
  * @list             : pointer to string list object
  *
@@ -124,7 +152,7 @@ void string_list_free(struct string_list *list);
  * @list             : pointer to string list.
  * @delim            : delimiter character for @list.
  *
- * A string list will be joined/concatenated as a 
+ * A string list will be joined/concatenated as a
  * string to @buffer, delimited by @delim.
  */
 void string_list_join_concat(char *buffer, size_t size,
@@ -140,6 +168,8 @@ void string_list_join_concat(char *buffer, size_t size,
  **/
 void string_list_set(struct string_list *list, unsigned idx,
       const char *str);
+
+struct string_list *string_list_clone(const struct string_list *src);
 
 RETRO_END_DECLS
 

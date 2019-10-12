@@ -1,4 +1,4 @@
-/* Copyright  (C) 2010-2015 The RetroArch team
+/* Copyright  (C) 2010-2018 The RetroArch team
  *
  * ---------------------------------------------------------------------------------------
  * The following license statement only applies to this file (rpng.h).
@@ -38,7 +38,7 @@ rpng_t *rpng_init(const char *path);
 
 bool rpng_is_valid(rpng_t *rpng);
 
-bool rpng_set_buf_ptr(rpng_t *rpng, void *data);
+bool rpng_set_buf_ptr(rpng_t *rpng, void *data, size_t len);
 
 rpng_t *rpng_alloc(void);
 
@@ -51,14 +51,14 @@ int rpng_process_image(rpng_t *rpng,
 
 bool rpng_start(rpng_t *rpng);
 
-#ifdef HAVE_ZLIB_DEFLATE
 bool rpng_save_image_argb(const char *path, const uint32_t *data,
       unsigned width, unsigned height, unsigned pitch);
 bool rpng_save_image_bgr24(const char *path, const uint8_t *data,
       unsigned width, unsigned height, unsigned pitch);
-#endif
+
+uint8_t* rpng_save_image_bgr24_string(const uint8_t *data,
+      unsigned width, unsigned height, signed pitch, uint64_t *bytes);
 
 RETRO_END_DECLS
 
 #endif
-

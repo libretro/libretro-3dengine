@@ -1,4 +1,4 @@
-/* Copyright  (C) 2010-2017 The RetroArch team
+/* Copyright  (C) 2010-2018 The RetroArch team
  *
  * ---------------------------------------------------------------------------------------
  * The following license statement only applies to this file (matrix_3x3.h).
@@ -196,7 +196,6 @@ static INLINE bool matrix_3x3_square_to_quad(
       d = dy1 - dy0 + g * dy1;
       e = dy3 - dy0 + h * dy3;
    }
-
 
    matrix_3x3_init(*mat,
          a, d, g,

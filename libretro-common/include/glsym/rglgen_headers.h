@@ -1,4 +1,4 @@
-/* Copyright (C) 2010-2015 The RetroArch team
+/* Copyright (C) 2010-2018 The RetroArch team
  *
  * ---------------------------------------------------------------------------------------
  * The following license statement only applies to this libretro SDK code part (glsym).
@@ -39,8 +39,14 @@
 #endif
 
 #elif defined(__APPLE__)
+#include <compat/apple_compat.h>
+#if MAC_OS_X_VERSION_10_7
+#include <OpenGL/gl3.h>
+#include <OpenGL/gl3ext.h>
+#else
 #include <OpenGL/gl.h>
 #include <OpenGL/glext.h>
+#endif
 #elif defined(HAVE_PSGL)
 #include <PSGL/psgl.h>
 #include <GLES/glext.h>
@@ -49,7 +55,8 @@
 #include <GL3/gl3ext.h>
 #elif defined(HAVE_OPENGLES3)
 #include <GLES3/gl3.h>
-#include <GLES2/gl2ext.h> /* There are no GLES3 extensions yet. */
+#define __gl2_h_
+#include <GLES2/gl2ext.h>
 #elif defined(HAVE_OPENGLES2)
 #include <GLES2/gl2.h>
 #include <GLES2/gl2ext.h>
@@ -61,8 +68,14 @@
 #define WIN32_LEAN_AND_MEAN
 #include <windows.h>
 #endif
+#ifndef HAVE_LIBNX
 #include <GL/gl.h>
 #include <GL/glext.h>
+#else
+/* We need to avoid including <GL/gl.h> on this platform */
+#include "switch/nx_gl.h"
+#include <GL/glext.h>
+#endif /* SWITCH */
 #endif
 
 #ifndef GL_MAP_WRITE_BIT
@@ -75,6 +88,14 @@
 
 #ifndef GL_RED_INTEGER
 #define GL_RED_INTEGER 0x8D94
+#endif
+
+#ifndef GL_BGRA_EXT
+#define GL_BGRA_EXT GL_BGRA
+#endif
+
+#ifndef GL_LUMINANCE_ALPHA
+#define GL_LUMINANCE_ALPHA 0x190A
 #endif
 
 #endif
