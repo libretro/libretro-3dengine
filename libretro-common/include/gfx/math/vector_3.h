@@ -1,4 +1,4 @@
-/* Copyright  (C) 2010-2017 The RetroArch team
+/* Copyright  (C) 2010-2018 The RetroArch team
  *
  * ---------------------------------------------------------------------------------------
  * The following license statement only applies to this file (vector_3.h).
@@ -66,4 +66,3 @@ typedef float vec3_t[3];
 RETRO_END_DECLS
 
 #endif
-

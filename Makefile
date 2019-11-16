@@ -94,9 +94,14 @@ ifeq ($(IOSSDK),)
    IOSSDK := $(shell xcodebuild -version -sdk iphoneos Path)
 endif
 
+ifeq ($(platform),ios-arm64)
+   CC = clang -arch arm64 -isysroot $(IOSSDK)
+   CXX = clang++ -arch arm64 -isysroot $(IOSSDK)
+else
    CC = clang -arch armv7 -isysroot $(IOSSDK)
    CXX = clang++ -arch armv7 -isysroot $(IOSSDK)
-   DEFINES += -DIOS
+endif
+   DEFINES += -DIOS -stdlib=libc++ -DHAVE_OPENGLES2
    CFLAGS += $(DEFINES)
    CXXFLAGS += $(DEFINES)
    INCFLAGS += -Iinclude/compat
