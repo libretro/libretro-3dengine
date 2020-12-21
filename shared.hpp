@@ -28,7 +28,7 @@
 #include <tr1/memory>
 #endif
 
-#if defined(__QNX__) || defined(__CELLOS_LV2__) || defined(IOS) || defined(OSX)
+#if defined(__QNX__) || defined(IOS) || defined(OSX)
 namespace std1 = compat;
 #elif !defined(EMSCRIPTEN)
 namespace std1 = std::tr1;
