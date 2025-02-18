@@ -117,6 +117,28 @@ else
    CXXFLAGS += -miphoneos-version-min=5.0
 endif
 
+else ifeq ($(platform), tvos-arm64)
+   TARGET := $(TARGET_NAME)_libretro_tvos.dylib
+   GLES := 1
+   SHARED := -dynamiclib
+   GL_LIB := -framework OpenGLES
+
+ifeq ($(IOSSDK),)
+   IOSSDK := $(shell xcodebuild -version -sdk appletvos Path)
+endif
+
+   CC = clang -arch arm64 -isysroot $(IOSSDK)
+   CXX = clang++ -arch arm64 -isysroot $(IOSSDK)
+
+   DEFINES += -DIOS -DTVOS -stdlib=libc++ -DHAVE_OPENGLES2
+   CFLAGS += $(DEFINES)
+   CXXFLAGS += $(DEFINES)
+   INCFLAGS += -Iinclude/compat
+   CC +=  -mappletvos-version-min=11.0
+   CXX +=  -mappletvos-version-min=11.0
+   CFLAGS += -mappletvos-version-min=11.0
+   CXXFLAGS += -mappletvos-version-min=11.0
+
 else ifneq (,$(findstring qnx,$(platform)))
    TARGET := $(TARGET_NAME)_libretro_$(platform).so
    fpic := -fPIC
@@ -241,7 +263,7 @@ CXXFLAGS += $(INCFLAGS) $(INCFLAGS_PLATFORM)
 ifeq ($(GLES), 1)
    CXXFLAGS += -DHAVE_OPENGLES
    CFLAGS += -DHAVE_OPENGLES
-ifneq (,$(findstring ios,$(platform)))
+ifneq (,$(findstring ios,$(platform))$(findstring tvos,$(platform)))
    LIBS += $(GL_LIB)
 else
    LIBS += -lGLESv2
