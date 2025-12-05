@@ -22,6 +22,11 @@ include:
   - project: 'libretro-infrastructure/ci-templates'
     file: '/linux-i686.yml'
 
+  #################################### MISC ##################################
+  # webOS 32-bit (LGTV)
+  - project: 'libretro-infrastructure/ci-templates'
+    file: '/webos-make.yml'
+
 # Stages for building
 stages:
   - build-prepare
@@ -43,4 +48,11 @@ libretro-build-linux-x64:
 libretro-build-linux-i686:
   extends:
     - .libretro-linux-i686-make-default
+    - .core-defs
+
+#################################### MISC ####################################
+# webOS 32-bit
+libretro-build-webos-armv7a:
+  extends:
+    - .libretro-webos-armv7a-make-platform-webos
     - .core-defs

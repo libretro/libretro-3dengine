@@ -155,6 +155,17 @@ else ifeq ($(platform), emscripten)
    INCFLAGS += -Iinclude/compat
 	STATIC_LINKING=1
    GLES := 1
+
+else ifneq (,$(findstring webos,$(platform)))
+   TARGET := $(TARGET_NAME)_libretro.so
+   fpic := -fPIC
+   SHARED := -shared -Wl,--version-script=link.T -Wl,--no-undefined
+   GLES := 1
+   CXXFLAGS += -DHAVE_OPENGLES2
+   CFLAGS   += -DHAVE_OPENGLES2
+   CXXFLAGS += -mfpu=neon
+   HAVE_NEON = 1
+
 # Windows MSVC 2010 x64
 else ifeq ($(platform), windows_msvc2010_x64)
 	CC  = cl.exe
