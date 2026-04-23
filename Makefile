@@ -152,8 +152,10 @@ else ifneq (,$(findstring qnx,$(platform)))
 
 else ifeq ($(platform), emscripten)
    TARGET := $(TARGET_NAME)_libretro_$(platform).bc
+   CFLAGS   += -DHAVE_OPENGLES2
+   CXXFLAGS += -DHAVE_OPENGLES2 -std=c++98
    INCFLAGS += -Iinclude/compat
-	STATIC_LINKING=1
+   STATIC_LINKING=1
    GLES := 1
 
 else ifneq (,$(findstring webos,$(platform)))

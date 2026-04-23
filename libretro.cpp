@@ -27,9 +27,7 @@
 #include <vector>
 #include "rpng.h"
 #include "program.h"
-
 #include "gl.hpp"
-#include "program.h"
 
 #define FPS 60.0
 
@@ -290,7 +288,7 @@ static void camera_gl_callback(unsigned texture_id, unsigned texture_target, con
 
 static inline bool gl_query_extension(const char *ext)
 {
-#ifndef ANDROID
+#if !defined(ANDROID) && !defined(EMSCRIPTEN)
    // This code crashes right now on Android 4.4 (but not 4.0 to 4.3), so comment it out for now
    const char *str = (const char*)glGetString(GL_EXTENSIONS);
    bool ret = str && strstr(str, ext);
