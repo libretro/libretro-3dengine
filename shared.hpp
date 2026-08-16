@@ -19,7 +19,7 @@
 #ifndef SHARED_HPP__
 #define SHARED_HPP__
 
-#if defined(_MSC_VER) || defined(EMSCRIPTEN)
+#if defined(_MSC_VER)
 #include <memory>
 #ifdef _MSC_VER
 #define snprintf _snprintf
@@ -28,9 +28,9 @@
 #include <tr1/memory>
 #endif
 
-#if defined(__QNX__) || defined(IOS) || defined(OSX)
+#if defined(__QNX__) || defined(IOS) || defined(OSX) || defined(EMSCRIPTEN)
 namespace std1 = compat;
-#elif !defined(EMSCRIPTEN)
+#else
 namespace std1 = std::tr1;
 #endif
 
