@@ -163,8 +163,10 @@ else ifneq (,$(findstring webos,$(platform)))
    GLES := 1
    CXXFLAGS += -DHAVE_OPENGLES2
    CFLAGS   += -DHAVE_OPENGLES2
-   CXXFLAGS += -mfpu=neon
-   HAVE_NEON = 1
+   ifeq (,$(findstring aarch64,$(CROSS_COMPILE)))
+      CXXFLAGS += -mfpu=neon
+      HAVE_NEON = 1
+   endif
 
 # Windows MSVC 2010 x64
 else ifeq ($(platform), windows_msvc2010_x64)
