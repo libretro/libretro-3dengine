@@ -40,7 +40,22 @@ else ifneq (,$(findstring osx,$(platform)))
    INCFLAGS += -Iinclude/compat
    OSXVER = `sw_vers -productVersion | cut -d. -f 2`
    OSX_LT_MAVERICKS = `(( $(OSXVER) <= 9)) && echo "YES"`
-   fpic += -fPIC -mmacosx-version-min=10.1
+   # 10.1 predates arm64 by two decades; it was being passed on every
+   # macOS build even though OSX_LT_MAVERICKS was computed and never read.
+   ifeq ($(OSX_LT_MAVERICKS),"YES")
+      MINVERSION = -mmacosx-version-min=10.1
+   endif
+   fpic += -fPIC $(MINVERSION)
+
+   # The buildbot's arm64 job cross-compiles and hands the target triple
+   # and SDK down in these; without them the build follows the host and
+   # the job's own lipo check rejects the result.
+   ifeq ($(CROSS_COMPILE),1)
+      TARGET_RULE = -target $(LIBRETRO_APPLE_PLATFORM) -isysroot $(LIBRETRO_APPLE_ISYSROOT)
+      CFLAGS   += $(TARGET_RULE)
+      CXXFLAGS += $(TARGET_RULE)
+      LDFLAGS  += $(TARGET_RULE)
+   endif
 
 else ifneq (,$(findstring armv,$(platform)))
    TARGET := $(TARGET_NAME)_libretro.so
