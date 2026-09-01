@@ -28,6 +28,25 @@
 
 #include "../../gl.hpp"
 
+/* GL 3.0 core spells these without a suffix. Apple only exposes the EXT
+ * names from the legacy <OpenGL/glext.h>, which the gl3.h header path
+ * this tree uses never pulls in. */
+#ifndef GL_RGB9_E5
+#ifdef GL_RGB9_E5_EXT
+#define GL_RGB9_E5 GL_RGB9_E5_EXT
+#else
+#define GL_RGB9_E5 0x8C3D
+#endif
+#endif
+
+#ifndef GL_R11F_G11F_B10F
+#ifdef GL_R11F_G11F_B10F_EXT
+#define GL_R11F_G11F_B10F GL_R11F_G11F_B10F_EXT
+#else
+#define GL_R11F_G11F_B10F 0x8C3A
+#endif
+#endif
+
 namespace gli{
 namespace detail
 {
@@ -135,17 +154,9 @@ namespace detail
 
 			// Packed
 			{GL_RED,		GL_COMPRESSED_RED,		GL_RED,				GL_COMPRESSED_RED,				GL_RED,			GL_RED,		GL_HALF_FLOAT},
-#if defined(__APPLE__) && !defined(IOS)
-			{GL_RGB9_E5_EXT,	GL_RGB9_E5_EXT,			
-#else
 			{GL_RGB9_E5,	GL_RGB9_E5,			
-#endif
 				GL_RED,				GL_COMPRESSED_RED,				GL_RED,			GL_RED,		GL_HALF_FLOAT},
-#if defined(__APPLE__) && !defined(IOS)
-			{GL_R11F_G11F_B10F_EXT,	GL_R11F_G11F_B10F_EXT,	
-#else
 			{GL_R11F_G11F_B10F,	GL_R11F_G11F_B10F,	
-#endif
 				GL_RED,				GL_COMPRESSED_RED,				GL_RED,			GL_RED,		GL_HALF_FLOAT},
 			{GL_RED,		GL_COMPRESSED_RED,		GL_RED,				GL_COMPRESSED_RED,				GL_RED,			GL_RED,		GL_HALF_FLOAT},
 			{GL_RGBA4,		GL_RGBA4,				GL_RED,				GL_COMPRESSED_RED,				GL_RED,			GL_RED,		GL_HALF_FLOAT},
