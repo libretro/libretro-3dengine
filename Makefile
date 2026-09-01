@@ -291,8 +291,8 @@ CFLAGS += -Wall $(fpic) $(INCFLAGS) $(INCFLAGS_PLATFORM)
 CXXFLAGS += $(INCFLAGS) $(INCFLAGS_PLATFORM)
 
 ifeq ($(GLES), 1)
-   CXXFLAGS += -DHAVE_OPENGLES
-   CFLAGS += -DHAVE_OPENGLES
+   CXXFLAGS += -DHAVE_OPENGLES -DHAVE_OPENGLES2
+   CFLAGS += -DHAVE_OPENGLES -DHAVE_OPENGLES2
 ifneq (,$(findstring ios,$(platform))$(findstring tvos,$(platform)))
    LIBS += $(GL_LIB)
 else
