@@ -3,7 +3,9 @@ LOCAL_PATH := $(call my-dir)
 CORE_DIR := $(LOCAL_PATH)/..
 
 GLES     := 1
-INCFLAGS :=
+#The NDK's libc++ has no <tr1/memory>; include/compat carries the same shim the
+#Apple and Emscripten builds use, and shared.hpp aliases std1 to it.
+INCFLAGS := -I$(CORE_DIR)/include/compat
 
 include $(CORE_DIR)/Makefile.common
 

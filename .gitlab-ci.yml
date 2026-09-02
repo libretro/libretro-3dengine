@@ -47,6 +47,24 @@ include:
   - project: 'libretro-infrastructure/ci-templates'
     file: '/webos-make.yml'
 
+
+  ################################## CELLULAR ################################
+  # Android
+  - project: 'libretro-infrastructure/ci-templates'
+    file: '/android-jni.yml'
+
+  # iOS
+  - project: 'libretro-infrastructure/ci-templates'
+    file: '/ios-arm64.yml'
+
+  # tvOS
+  - project: 'libretro-infrastructure/ci-templates'
+    file: '/tvos-arm64.yml'
+
+  #################################### MISC ##################################
+  # Emscripten
+  - project: 'libretro-infrastructure/ci-templates'
+    file: '/emscripten-static.yml'
 # Stages for building
 stages:
   - build-prepare
@@ -105,4 +123,48 @@ libretro-build-linux-i686:
 libretro-build-webos-armv7a:
   extends:
     - .libretro-webos-armv7a-make-platform-webos
+    - .core-defs
+
+################################### CELLULAR #################################
+# Android ARMv7a
+android-armeabi-v7a:
+  extends:
+    - .libretro-android-jni-armeabi-v7a
+    - .core-defs
+
+# Android ARMv8a
+android-arm64-v8a:
+  extends:
+    - .libretro-android-jni-arm64-v8a
+    - .core-defs
+
+# Android 32-bit x86
+android-x86:
+  extends:
+    - .libretro-android-jni-x86
+    - .core-defs
+
+# Android 64-bit x86
+android-x86_64:
+  extends:
+    - .libretro-android-jni-x86_64
+    - .core-defs
+
+# iOS arm64
+libretro-build-ios-arm64:
+  extends:
+    - .libretro-ios-arm64-make-default
+    - .core-defs
+
+# tvOS arm64
+libretro-build-tvos-arm64:
+  extends:
+    - .libretro-tvos-arm64-make-default
+    - .core-defs
+
+##################################### MISC ###################################
+# Emscripten
+libretro-build-emscripten:
+  extends:
+    - .libretro-emscripten-static-retroarch-master
     - .core-defs
