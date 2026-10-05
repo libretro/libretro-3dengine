@@ -59,12 +59,19 @@ enum
 
 unsigned mode_engine = MODE_MODELVIEWER;
 
+static bool scene_flip_y(void) { return !hw_render.bottom_left_origin; }
+
+static struct retro_vr_frame_state vr_frame;
+bool modelviewer_vr_capable(void) { return mode_engine == MODE_SCENEWALKER; }
+
+static float player_view_deg_x;
+static float player_view_deg_y;
+static vec3 player_pos(0, 2, 0);
+
+extern bool vr_user_enable;
+
 static vec3 scenewalker_check_input(void)
 {
-   static float player_view_deg_x;
-   static float player_view_deg_y;
-   static vec3 player_pos(0, 2, 0);
-
    input_poll_cb();
 
    int analog_x = input_state_cb(0, RETRO_DEVICE_ANALOG,
@@ -152,6 +159,9 @@ static vec3 scenewalker_check_input(void)
    }
 #endif
 
+   if (vr_active)
+      analog_ry = 0; /* head controls pitch */
+
    player_view_deg_y += analog_rx * -0.00008f;
    player_view_deg_x += analog_ry * -0.00005f;
 
@@ -165,6 +175,13 @@ static vec3 scenewalker_check_input(void)
 
    vec3 right_walk_dir = vec3(rotate_y_right * vec4(0, 0, -1, 1));
    vec3 front_walk_dir = vec3(rotate_y * vec4(0, 0, -1, 1));
+
+   if (vr_active)
+   {
+      /* walk where the head points, on the ground plane */
+      front_walk_dir = vec3(rotate_y * vec4(vr_head_forward_xz(vr_frame), 0.0f));
+      right_walk_dir = cross(front_walk_dir, vec3(0, 1, 0));
+   }
 
    vec3 velocity = front_walk_dir * vec3(analog_y * -0.000002f) +
       right_walk_dir * vec3(analog_x * 0.000002f);
@@ -539,9 +556,15 @@ static void init_mesh(const std::string& path)
 
    mat4 projection;
    if (mode_engine == MODE_SCENEWALKER)
-      projection = scale(mat4(1.0), vec3(1, -1, 1)) * perspective(45.0f, 640.0f / 480.0f, 1.0f, 100.0f);
+   {
+      projection = perspective(45.0f, 640.0f / 480.0f, 1.0f, 100.0f);
+      if (scene_flip_y())
+         projection = scale(mat4(1.0), vec3(1, -1, 1)) * projection;
+   }
    else
+   {
       projection = scale(mat4(1.0), vec3(1, -1, 1)) * perspective(45.0f, 4.0f / 3.0f, 0.2f, 100.0f);
+   }
 
    for (unsigned i = 0; i < meshes.size(); i++)
    {
@@ -617,34 +640,92 @@ static void modelviewer_update_variables(retro_environment_t environ_cb)
       if (!first_init)
          modelviewer_context_reset();
    }
+
+   var.key = "3dengine-modelviewer-vr-enable";
+   var.value = NULL;
+
+   if (environ_cb(RETRO_ENVIRONMENT_GET_VARIABLE, &var) && var.value)
+   {
+      if (!strcmp(var.value, "disabled"))
+         vr_user_enable = false;
+      else if (!strcmp(var.value, "enabled"))
+         vr_user_enable = true;
+
+      if (!first_init)
+         modelviewer_context_reset();
+   }
 }
 
 
 static void modelviewer_run(void)
 {
-   unsigned i;
+   unsigned i, width, height;
+   const bool scene = (mode_engine == MODE_SCENEWALKER);
+   bool vr = false;
+
+   if (scene && vr_active)
+   {
+      vr_poll_frame(&vr_frame); /* once, before input, per the API doc */
+      vr = vr_active;           /* may drop if the resize renegotiation failed */
+   }
+
    vec3 look_dir = modelviewer_check_input();
    (void)look_dir;
 
+   width  = vr ? vr_eye_width * 2 : engine_width;
+   height = vr ? vr_eye_height    : engine_height;
+
    glBindFramebuffer(GL_FRAMEBUFFER, hw_render.get_current_framebuffer());
-   glViewport(0, 0, engine_width, engine_height);
+   glViewport(0, 0, width, height);
    glClearColor(0.2f, 0.2f, 0.2f, 1.0f);
    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
    glEnable(GL_DEPTH_TEST);
-   glFrontFace(GL_CW); // When we flip vertically, orientation changes.
+   /* Only the flipped projection needs CW. Unflipped is normal CCW. */
+   glFrontFace((scene && !scene_flip_y()) ? GL_CCW : GL_CW);
    glEnable(GL_CULL_FACE);
    glEnable(GL_BLEND);
 
-   for (i = 0; i < meshes.size(); i++)
-      meshes[i]->render();
+   if (vr)
+   {
+      unsigned eye;
+      mat4 rig = translate(mat4(1.0), player_pos) *
+         rotate(mat4(1.0), player_view_deg_y, vec3(0, 1, 0));
+
+      glEnable(GL_SCISSOR_TEST);
+      for (eye = 0; eye < 2; eye++)
+      {
+         const struct retro_vr_eye_state &es = vr_frame.eyes[eye];
+         mat4 eye_world = rig * vr_eye_pose_matrix(es);
+         mat4 view      = inverse(eye_world);
+         mat4 proj      = vr_projection(es.fov_tan, 0.1f, 100.0f);
+         vec3 eye_pos   = vec3(eye_world[3]);
+
+         if (scene_flip_y())
+            proj = scale(mat4(1.0), vec3(1, -1, 1)) * proj;
+
+         glViewport(eye * vr_eye_width, 0, vr_eye_width, vr_eye_height);
+         glScissor (eye * vr_eye_width, 0, vr_eye_width, vr_eye_height);
+
+         for (i = 0; i < meshes.size(); i++)
+         {
+            meshes[i]->set_projection(proj);
+            meshes[i]->set_view(view);
+            meshes[i]->set_eye(eye_pos);
+            meshes[i]->render();
+         }
+      }
+      glDisable(GL_SCISSOR_TEST);
+   }
+   else
+      for (i = 0; i < meshes.size(); i++)
+         meshes[i]->render();
 
    glDisable(GL_BLEND);
    glDisable(GL_DEPTH_TEST);
    glDisable(GL_CULL_FACE);
-   video_cb(RETRO_HW_FRAME_BUFFER_VALID, engine_width, engine_height, 0);
+   video_cb(RETRO_HW_FRAME_BUFFER_VALID, width, height, 0);
 }
-
 static void scenewalker_reset_mesh_path(void)
 {
    //always assume matching .obj file is there
@@ -677,6 +758,8 @@ static void modelviewer_load_game(const struct retro_game_info *info)
       player_size = vec3(0, 0, 0);
 
    first_init = false;
+
+   vr_frame_defaults(&vr_frame);
 }
 
 const engine_program_t engine_program_modelviewer = {

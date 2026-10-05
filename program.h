@@ -22,6 +22,8 @@
 #include "glm/glm.hpp"
 #include "glm/gtc/matrix_transform.hpp"
 
+#include "vr_support.hpp"
+
 extern retro_input_poll_t input_poll_cb;
 extern retro_input_state_t input_state_cb;
 extern struct retro_hw_render_callback hw_render;
@@ -58,5 +60,12 @@ typedef struct engine_program
 
 extern const engine_program_t engine_program_instancingviewer;
 extern const engine_program_t engine_program_modelviewer;
+
+// VR
+extern bool vr_active;
+extern unsigned vr_eye_width;
+extern unsigned vr_eye_height;
+extern bool modelviewer_vr_capable(void);
+extern bool vr_poll_frame(struct retro_vr_frame_state *fs);
 
 #endif

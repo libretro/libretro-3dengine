@@ -71,6 +71,11 @@ unsigned engine_height = BASE_HEIGHT;
 GLuint tex;
 GLuint g_texture_target = GL_TEXTURE_2D;
 
+bool vr_active = false;
+unsigned vr_eye_width  = 0;
+unsigned vr_eye_height = 0;
+bool vr_user_enable = true;
+
 void retro_init(void)
 {
    struct retro_log_callback log;
@@ -119,6 +124,13 @@ void retro_get_system_av_info(struct retro_system_av_info *info)
    info->geometry.base_height = BASE_HEIGHT;
    info->geometry.max_width   = MAX_WIDTH;
    info->geometry.max_height  = MAX_HEIGHT;
+
+   if (vr_active)
+   {
+      info->geometry.base_width   = info->geometry.max_width  = vr_eye_width * 2;
+      info->geometry.base_height  = info->geometry.max_height = vr_eye_height;
+      info->geometry.aspect_ratio = (float)(vr_eye_width * 2) / vr_eye_height;
+   }
 }
 
 void retro_set_environment(retro_environment_t cb)
@@ -158,6 +170,7 @@ void retro_set_environment(retro_environment_t cb)
                         },
                   { "3dengine-modelviewer-discard-hack", "Discard hack enable; disabled|enabled" },
                   { "3dengine-location-display-position", "Location position OSD; disabled|enabled" },
+                  { "3dengine-modelviewer-vr-enable", "VR enable in modelviewer; enabled|disabled" },
       { NULL, NULL },
    };
 
@@ -404,6 +417,53 @@ static void location_deinitialized(void)
       location_cb.stop();
 }
 
+// VAR
+static bool vr_request_session(void)
+{
+   struct retro_vr_content_info vr;
+   memset(&vr, 0, sizeof(vr));
+   vr.stereo_native   = true;
+   vr.ipd_hint_m      = 0.0f;
+   vr.layout          = RETRO_VR_LAYOUT_SIDE_BY_SIDE;
+   vr.request_flat    = !vr_user_enable;
+   vr.reference_space = RETRO_VR_REFERENCE_SPACE_LOCAL; /* eye height == player_pos.y */
+
+   if (!environ_cb(RETRO_ENVIRONMENT_SET_VR_CONTENT_INFO, &vr))
+   {
+      log_cb(RETRO_LOG_INFO, "VR session request failed.\n");
+      return false; /* old frontend, no headset, or VR disabled -> flat */
+   }
+
+   vr_eye_width  = vr.recommended_eye_width  ? vr.recommended_eye_width  : 1024;
+   vr_eye_height = vr.recommended_eye_height ? vr.recommended_eye_height : 1024;
+
+   log_cb(RETRO_LOG_INFO, "VR session request success. vr_eye_width: %d vr_eye_height: %d.\n", vr_eye_width, vr_eye_height);
+
+   return true;
+}
+
+bool vr_poll_frame(struct retro_vr_frame_state *fs)
+{
+   struct retro_vr_frame_state tmp = *fs;
+   if (!environ_cb(RETRO_ENVIRONMENT_GET_VR_FRAME_STATE, &tmp))
+      return false; /* keep last pose */
+   *fs = tmp;
+
+   if (tmp.flags & RETRO_VR_FRAME_TARGET_RESIZED)
+   {
+      if (vr_request_session())
+      {
+         struct retro_system_av_info av;
+         retro_get_system_av_info(&av);
+         environ_cb(RETRO_ENVIRONMENT_SET_SYSTEM_AV_INFO, &av);
+      }
+      else
+         vr_active = false;
+   }
+   return true;
+}
+// END VR
+
 bool retro_load_game(const struct retro_game_info *info)
 {
    retro_variable var;
@@ -544,6 +604,11 @@ bool retro_load_game(const struct retro_game_info *info)
    if (engine_program_cb && engine_program_cb->load_game)
       engine_program_cb->load_game(info);
 
+   vr_active = false;
+   if (vr_user_enable && engine_program_cb == &engine_program_modelviewer &&
+         modelviewer_vr_capable())
+      vr_active = vr_request_session();
+
    return true;
 }
 
@@ -554,6 +619,7 @@ void retro_unload_game(void)
    if (convert_buffer)
       delete[] convert_buffer;
    convert_buffer = NULL;
+   vr_active = false;
 }
 
 unsigned retro_get_region(void)
