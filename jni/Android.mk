@@ -3,13 +3,14 @@ LOCAL_PATH := $(call my-dir)
 CORE_DIR := $(LOCAL_PATH)/..
 
 GLES     := 1
+HAVE_VULKAN ?= 1
 #The NDK's libc++ has no <tr1/memory>; include/compat carries the same shim the
 #Apple and Emscripten builds use, and shared.hpp aliases std1 to it.
 INCFLAGS := -I$(CORE_DIR)/include/compat
 
 include $(CORE_DIR)/Makefile.common
 
-COREFLAGS := -DHAVE_OPENGLES -DHAVE_OPENGLES2 -DANDROID -DHAVE_RJPEG -DHAVE_RTGA -DHAVE_RBMP -DHAVE_RPNG -DINLINE="inline" $(INCFLAGS)
+COREFLAGS := -DHAVE_OPENGLES -DHAVE_OPENGLES2 -DHAVE_VULKAN -DANDROID -DHAVE_RJPEG -DHAVE_RTGA -DHAVE_RBMP -DHAVE_RPNG -DINLINE="inline" $(INCFLAGS)
 
 GIT_VERSION := " $(shell git rev-parse --short HEAD || echo unknown)"
 ifneq ($(GIT_VERSION)," unknown")

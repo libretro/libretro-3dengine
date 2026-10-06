@@ -26,8 +26,39 @@
 
 namespace OBJ
 {
+   /* Renderer-agnostic material. Texture maps are full file paths
+    * (empty if none) so both the GL and Vulkan back-ends can load them. */
+   struct RawMaterial
+   {
+      RawMaterial() :
+         ambient(0, 0, 0),
+         diffuse(0, 0, 0),
+         specular(0, 0, 0),
+         specular_power(60.0f),
+         alpha_mod(1.0f)
+      {}
+
+      glm::vec3 ambient;
+      glm::vec3 diffuse;
+      glm::vec3 specular;
+      float specular_power;
+      float alpha_mod;
+      std::string diffuse_map;
+      std::string ambient_map;
+   };
+
+   /* One draw call's worth of triangles that share a material. */
+   struct Part
+   {
+      std::vector<GL::Vertex> vertices;
+      RawMaterial material;
+   };
+
+   /* Pure CPU parse. Needs no GL/Vulkan context. */
+   std::vector<Part> load_parts(const std::string& path);
+
+   /* GL back-end: load_parts() + create GL::Mesh/GL::Texture objects. */
    std::vector<std1::shared_ptr<GL::Mesh> > load_from_file(const std::string& path);
 }
 
 #endif
-

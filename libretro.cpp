@@ -29,6 +29,10 @@
 #include "program.h"
 #include "gl.hpp"
 
+#ifdef HAVE_VULKAN
+#include "engine/vk_renderer.hpp"
+#endif
+
 #define FPS 60.0
 
 retro_position_t previous_location;
@@ -53,6 +57,8 @@ retro_input_state_t input_state_cb;
 static const engine_program_t *engine_program_cb;
 struct retro_sensor_interface sensor_cb;
 
+enum retro_hw_context_type active_hw_context = RETRO_HW_CONTEXT_NONE;
+
 static bool display_position;
 
 #define BASE_WIDTH 320
@@ -75,6 +81,11 @@ bool vr_active = false;
 unsigned vr_eye_width  = 0;
 unsigned vr_eye_height = 0;
 bool vr_user_enable = true;
+
+bool renderer_is_vulkan(void)
+{
+   return active_hw_context == RETRO_HW_CONTEXT_VULKAN;
+}
 
 void retro_init(void)
 {
@@ -403,6 +414,13 @@ static void context_reset(void)
       engine_program_cb->context_reset();
 }
 
+/* Only registered for Vulkan contexts (see try_hw_context()). */
+static void context_destroy(void)
+{
+   if (engine_program_cb && engine_program_cb->context_destroy)
+      engine_program_cb->context_destroy();
+}
+
 char retro_path_info[1024];
 
 static void location_initialized(void)
@@ -430,14 +448,16 @@ static bool vr_request_session(void)
 
    if (!environ_cb(RETRO_ENVIRONMENT_SET_VR_CONTENT_INFO, &vr))
    {
-      log_cb(RETRO_LOG_INFO, "VR session request failed.\n");
+      if (log_cb)
+         log_cb(RETRO_LOG_INFO, "VR session request failed.\n");
       return false; /* old frontend, no headset, or VR disabled -> flat */
    }
 
    vr_eye_width  = vr.recommended_eye_width  ? vr.recommended_eye_width  : 1024;
    vr_eye_height = vr.recommended_eye_height ? vr.recommended_eye_height : 1024;
 
-   log_cb(RETRO_LOG_INFO, "VR session request success. vr_eye_width: %d vr_eye_height: %d.\n", vr_eye_width, vr_eye_height);
+   if (log_cb)
+      log_cb(RETRO_LOG_INFO, "VR session request success. vr_eye_width: %d vr_eye_height: %d.\n", vr_eye_width, vr_eye_height);
 
    return true;
 }
@@ -464,18 +484,98 @@ bool vr_poll_frame(struct retro_vr_frame_state *fs)
 }
 // END VR
 
+static bool try_hw_context(enum retro_hw_context_type type)
+{
+   memset(&hw_render, 0, sizeof(hw_render));
+   hw_render.context_type  = type;
+   hw_render.context_reset = context_reset;
+
+   if (type == RETRO_HW_CONTEXT_VULKAN)
+   {
+#ifdef HAVE_VULKAN
+      hw_render.context_destroy = context_destroy;
+      if (!environ_cb(RETRO_ENVIRONMENT_SET_HW_RENDER, &hw_render))
+         return false;
+
+      if (!VKR::set_negotiation_interface(environ_cb) && log_cb)
+         log_cb(RETRO_LOG_WARN, "Vulkan context negotiation not available, using frontend defaults.\n");
+      return true;
+#else
+      return false;
+#endif
+   }
+
+   hw_render.depth = true;
+   if (!camera_enable)
+      hw_render.bottom_left_origin = true;
+   return environ_cb(RETRO_ENVIRONMENT_SET_HW_RENDER, &hw_render);
+}
+
+static bool init_hw_render(bool allow_vulkan)
+{
+   unsigned i, n = 0;
+   enum retro_hw_context_type order[2];
+   enum retro_hw_context_type preferred = RETRO_HW_CONTEXT_NONE;
+   bool have_vulkan = false;
+#ifdef HAVE_OPENGLES
+   const enum retro_hw_context_type gl_type = RETRO_HW_CONTEXT_OPENGLES2;
+#else
+   const enum retro_hw_context_type gl_type = RETRO_HW_CONTEXT_OPENGL;
+#endif
+
+#ifdef HAVE_VULKAN
+   have_vulkan = allow_vulkan;
+#else
+   (void)allow_vulkan;
+#endif
+
+   environ_cb(RETRO_ENVIRONMENT_GET_PREFERRED_HW_RENDER, &preferred);
+
+   if (have_vulkan && preferred == RETRO_HW_CONTEXT_VULKAN)
+   {
+      order[n++] = RETRO_HW_CONTEXT_VULKAN;
+      order[n++] = gl_type;
+   }
+   else
+   {
+      order[n++] = gl_type;
+      if (have_vulkan)
+         order[n++] = RETRO_HW_CONTEXT_VULKAN;
+   }
+
+   for (i = 0; i < n; i++)
+   {
+      if (try_hw_context(order[i]))
+      {
+         active_hw_context = order[i];
+         if (log_cb)
+            log_cb(RETRO_LOG_INFO, "Using %s renderer (frontend preference: %d).\n",
+                  order[i] == RETRO_HW_CONTEXT_VULKAN ? "Vulkan" : "OpenGL/GLES",
+                  (int)preferred);
+         return true;
+      }
+   }
+
+   active_hw_context = RETRO_HW_CONTEXT_NONE;
+   return false;
+}
+
 bool retro_load_game(const struct retro_game_info *info)
 {
    retro_variable var;
+   bool allow_vulkan = false;
 
    if (!info)
       return false;
 
    strcpy(retro_path_info, info->path);
    if (strstr(info->path, ".obj") || strstr(info->path, ".mtl"))
+   {
       engine_program_cb = &engine_program_modelviewer;
+      allow_vulkan      = true; /* the mesh viewer/scene walker have a Vulkan back-end */
+   }
    else
-      engine_program_cb = &engine_program_instancingviewer;
+      engine_program_cb = &engine_program_instancingviewer; /* GL only: camera textures, instanced cubes */
 
    update_variables();
 
@@ -490,7 +590,8 @@ bool retro_load_game(const struct retro_game_info *info)
          if (sensor_initialized)
             return true;
 
-         log_cb(RETRO_LOG_INFO, "Sensor interface found, enabling...\n");
+         if (log_cb)
+            log_cb(RETRO_LOG_INFO, "Sensor interface found, enabling...\n");
          if (sensor_cb.set_sensor_state)
          {
             sensor_cb.set_sensor_state(0, RETRO_SENSOR_ACCELEROMETER_ENABLE, FPS);
@@ -504,7 +605,8 @@ bool retro_load_game(const struct retro_game_info *info)
          if (sensor_initialized)
             return true;
 
-         log_cb(RETRO_LOG_INFO, "Sensor interface found, disabling...\n");
+         if (log_cb)
+            log_cb(RETRO_LOG_INFO, "Sensor interface found, disabling...\n");
          if (sensor_cb.set_sensor_state)
          {
             sensor_cb.set_sensor_state(0, RETRO_SENSOR_ACCELEROMETER_DISABLE, FPS);
@@ -573,29 +675,24 @@ bool retro_load_game(const struct retro_game_info *info)
       }
    }
 
-#ifdef HAVE_OPENGLES
-   hw_render.context_type = RETRO_HW_CONTEXT_OPENGLES2;
-#else
-   hw_render.context_type = RETRO_HW_CONTEXT_OPENGL;
-#endif
-   hw_render.context_reset = context_reset;
-   hw_render.depth = true;
-   if (!camera_enable)
-      hw_render.bottom_left_origin = true;
-   if (!environ_cb(RETRO_ENVIRONMENT_SET_HW_RENDER, &hw_render))
+   if (!init_hw_render(allow_vulkan))
       return false;
 
-#ifdef HAVE_OPENGLES
-   if (camera_enable && camera_cb.caps & (1 << RETRO_CAMERA_BUFFER_RAW_FRAMEBUFFER) && !gl_query_extension("BGRA8888"))
+   /* GL-only checks (they query a GL context / the camera GL paths). */
+   if (!renderer_is_vulkan())
    {
-      if (log_cb)
-         log_cb(RETRO_LOG_ERROR, "no BGRA8888 support for raw framebuffer, exiting...\n");
-      return false;
-   }
-   support_unpack_row_length = gl_query_extension("GL_EXT_unpack_subimage");
+#ifdef HAVE_OPENGLES
+      if (camera_enable && camera_cb.caps & (1 << RETRO_CAMERA_BUFFER_RAW_FRAMEBUFFER) && !gl_query_extension("BGRA8888"))
+      {
+         if (log_cb)
+            log_cb(RETRO_LOG_ERROR, "no BGRA8888 support for raw framebuffer, exiting...\n");
+         return false;
+      }
+      support_unpack_row_length = gl_query_extension("GL_EXT_unpack_subimage");
 #else
-   support_unpack_row_length = true;
+      support_unpack_row_length = true;
 #endif
+   }
 
    if (log_cb)
       log_cb(RETRO_LOG_INFO, "Loaded game!\n");
@@ -620,6 +717,8 @@ void retro_unload_game(void)
       delete[] convert_buffer;
    convert_buffer = NULL;
    vr_active = false;
+   /* Vulkan resources are released in context_destroy(), while the device
+    * is still alive; nothing to do for them here. */
 }
 
 unsigned retro_get_region(void)
@@ -668,6 +767,11 @@ size_t retro_get_memory_size(unsigned id)
 
 void retro_reset(void)
 {
+   /* A GL context can simply be re-populated; a Vulkan one must not be
+    * re-initialised behind the frontend's back. */
+   if (renderer_is_vulkan())
+      return;
+
    if (engine_program_cb && engine_program_cb->context_reset)
       engine_program_cb->context_reset();
 }
@@ -681,4 +785,3 @@ void retro_cheat_set(unsigned index, bool enabled, const char *code)
    (void)enabled;
    (void)code;
 }
-

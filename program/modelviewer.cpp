@@ -23,6 +23,10 @@
 #include "collision_detection.hpp"
 #include "location_math.h"
 
+#ifdef HAVE_VULKAN
+#include "../engine/vk_renderer.hpp"
+#endif
+
 #include <glsym/glsym.h>
 
 #include <vector>
@@ -69,6 +73,16 @@ static float player_view_deg_y;
 static vec3 player_pos(0, 2, 0);
 
 extern bool vr_user_enable;
+
+/* Per-frame scene state written by the input code and consumed by whichever
+ * renderer is active (GL meshes or the Vulkan renderer). */
+static mat4 scene_model(1.0f);
+static mat4 scene_view(1.0f);
+static vec3 scene_eye(0.0f, 0.0f, 0.0f);
+
+#ifdef HAVE_VULKAN
+static bool vk_scene_ok = false;
+#endif
 
 static vec3 scenewalker_check_input(void)
 {
@@ -273,13 +287,8 @@ static vec3 scenewalker_check_input(void)
       }
    }
 
-   for (unsigned i = 0; i < meshes.size(); i++)
-   {
-      meshes[i]->set_view(view);
-      meshes[i]->set_eye(player_pos);
-      meshes[i]->set_lighting(light_r, light_g, light_b);
-      meshes[i]->set_ambient_lighting(ambient_light_r, ambient_light_g, ambient_light_b);
-   }
+   scene_view = view;
+   scene_eye  = player_pos;
 
    return player_size;
 }
@@ -392,17 +401,48 @@ static vec3 modelviewer_check_input(void)
    mat4 rotate_x = rotate(mat4(1.0), model_rotate_x, vec3(1, 0, 0));
    mat4 rotate_y = rotate(mat4(1.0), model_rotate_y, vec3(0, 1, 0));
 
-   mat4 model = translation * scaler * rotate_x * rotate_y;
-
-   for (unsigned i = 0; i < meshes.size(); i++)
-   {
-      meshes[i]->set_model(model);
-      meshes[i]->set_ambient_lighting(ambient_light_r, ambient_light_g, ambient_light_b);
-      meshes[i]->set_lighting(light_r, light_g, light_b);
-   }
+   scene_model = translation * scaler * rotate_x * rotate_y;
    //check_collision_cube();
 
    return player_size;
+}
+
+/* Pushes the state computed by the input code into the GL meshes. */
+static void apply_scene_state_gl(void)
+{
+   const bool scene = (mode_engine == MODE_SCENEWALKER);
+   for (unsigned i = 0; i < meshes.size(); i++)
+   {
+      if (scene)
+      {
+         meshes[i]->set_view(scene_view);
+         meshes[i]->set_eye(scene_eye);
+      }
+      else
+         meshes[i]->set_model(scene_model);
+
+      meshes[i]->set_lighting(light_r, light_g, light_b);
+      meshes[i]->set_ambient_lighting(ambient_light_r, ambient_light_g, ambient_light_b);
+   }
+}
+
+static void init_lighting(void)
+{
+   if (mode_engine == MODE_SCENEWALKER)
+   {
+      light_r = normalize(0);
+      light_g = normalize(10);
+      light_b = normalize(0);
+   }
+   else
+   {
+      light_r = normalize(-1);
+      light_g = normalize(-1);
+      light_b = normalize(-1);
+   }
+   ambient_light_r = 0.25f;
+   ambient_light_g = 0.25f;
+   ambient_light_b = 0.25f;
 }
 
 static void init_mesh(const std::string& path)
@@ -582,27 +622,70 @@ static void init_mesh(const std::string& path)
       }
    }
 
-   if (mode_engine == MODE_SCENEWALKER)
+   init_lighting();
+}
+
+#ifdef HAVE_VULKAN
+/* Vulkan counterpart of init_mesh(): same OBJ parse, same collision data,
+ * but the GPU objects live in VKR instead of GL::Mesh. */
+static bool vulkan_load_scene(void)
+{
+   unsigned i, v;
+   const bool scene = (mode_engine == MODE_SCENEWALKER);
+   std::vector<OBJ::Part> parts;
+   VKR::ShaderMode mode;
+
+   if (log_cb)
+      log_cb(RETRO_LOG_INFO, "Loading Mesh (Vulkan) ...\n");
+
+   parts = OBJ::load_parts(mesh_path);
+
+   if (scene)
    {
-      light_r = normalize(0);
-      light_g = normalize(10);
-      light_b = normalize(0);
+      for (i = 0; i < parts.size(); i++)
+         for (v = 0; v + 2 < parts[i].vertices.size(); v += 3)
+            coll_triangles_push(v, parts[i].vertices, player_size);
+      mode = VKR::SHADER_SCENE;
    }
    else
-   {
-      light_r = normalize(-1);
-      light_g = normalize(-1);
-      light_b = normalize(-1);
-   }
-   ambient_light_r = 0.25f;
-   ambient_light_g = 0.25f;
-   ambient_light_b = 0.25f;
+      mode = discard_hack_enable ? VKR::SHADER_MODEL_DISCARD : VKR::SHADER_MODEL;
+
+   init_lighting();
+
+   vk_scene_ok = VKR::load_scene(parts, mode);
+   return vk_scene_ok;
 }
+#endif
 
 extern char retro_path_info[1024];
 
 static void modelviewer_context_reset(void)
 {
+#ifdef HAVE_VULKAN
+   if (renderer_is_vulkan())
+   {
+      vk_scene_ok = false;
+
+      if (strstr(retro_path_info, ".mtl") || mode_engine == MODE_SCENEWALKER)
+      {
+         coll_triangles_clear();
+         scenewalker_reset_mesh_path();
+         mode_engine = MODE_SCENEWALKER;
+      }
+
+      if (!VKR::init(environ_cb))
+      {
+         if (log_cb)
+            log_cb(RETRO_LOG_ERROR, "Vulkan renderer init failed.\n");
+         return;
+      }
+
+      vulkan_load_scene();
+      update = true;
+      return;
+   }
+#endif
+
    renderer_dead_state = true;
    meshes.clear();
    blank.reset();
@@ -623,6 +706,33 @@ static void modelviewer_context_reset(void)
    update = true;
 }
 
+/* Called from the frontend's context_destroy (Vulkan only). */
+static void modelviewer_context_destroy(void)
+{
+#ifdef HAVE_VULKAN
+   vk_scene_ok = false;
+   VKR::destroy();
+#endif
+}
+
+/* Option changes used to be applied by faking a context reset. For Vulkan
+ * only the scene (pipeline variant + geometry) needs rebuilding. */
+static void modelviewer_apply_option_change(void)
+{
+#ifdef HAVE_VULKAN
+   if (renderer_is_vulkan())
+   {
+      if (!VKR::initialized())
+         return; /* will be built by the real context_reset */
+      if (mode_engine == MODE_SCENEWALKER)
+         coll_triangles_clear();
+      vulkan_load_scene();
+      return;
+   }
+#endif
+   modelviewer_context_reset();
+}
+
 static void modelviewer_update_variables(retro_environment_t environ_cb)
 {
    struct retro_variable var;
@@ -638,7 +748,7 @@ static void modelviewer_update_variables(retro_environment_t environ_cb)
          discard_hack_enable = true;
 
       if (!first_init)
-         modelviewer_context_reset();
+         modelviewer_apply_option_change();
    }
 
    var.key = "3dengine-modelviewer-vr-enable";
@@ -652,10 +762,62 @@ static void modelviewer_update_variables(retro_environment_t environ_cb)
          vr_user_enable = true;
 
       if (!first_init)
-         modelviewer_context_reset();
+         modelviewer_apply_option_change();
    }
 }
 
+#ifdef HAVE_VULKAN
+static void modelviewer_run_vulkan(unsigned width, unsigned height, bool scene, bool vr)
+{
+   VKR::Frame f;
+
+   f.model        = scene_model;
+   f.light        = vec3(light_r, light_g, light_b);
+   f.ambient      = vec3(ambient_light_r, ambient_light_g, ambient_light_b);
+   f.width        = width;
+   f.height       = height;
+   f.num_passes   = 0;
+
+   if (vr)
+   {
+      unsigned eye;
+      mat4 rig = translate(mat4(1.0), player_pos) *
+         rotate(mat4(1.0), player_view_deg_y, vec3(0, 1, 0));
+
+      for (eye = 0; eye < 2; eye++)
+      {
+         const struct retro_vr_eye_state &es = vr_frame.eyes[eye];
+         mat4 eye_world = rig * vr_eye_pose_matrix(es);
+         VKR::Pass &p   = f.passes[eye];
+
+         /* Same matrices as the GL path; VKR applies the GL->Vulkan clip
+          * correction, so no scene_flip_y() handling here. */
+         p.view    = inverse(eye_world);
+         p.proj    = vr_projection(es.fov_tan, 0.1f, 100.0f);
+         p.eye_pos = vec3(eye_world[3]);
+         p.x       = eye * vr_eye_width;
+         p.width   = vr_eye_width;
+         p.height  = vr_eye_height;
+      }
+      f.num_passes = 2;
+   }
+   else
+   {
+      VKR::Pass &p = f.passes[0];
+      p.proj    = scene ? perspective(45.0f, 640.0f / 480.0f, 1.0f, 100.0f)
+                        : perspective(45.0f, 4.0f / 3.0f, 0.2f, 100.0f);
+      p.view    = scene ? scene_view : mat4(1.0f);
+      p.eye_pos = scene_eye;
+      p.x       = 0;
+      p.width   = width;
+      p.height  = height;
+      f.num_passes = 1;
+   }
+
+   if (!vk_scene_ok || !VKR::render(f, video_cb))
+      video_cb(NULL, width, height, 0); /* dupe the last frame */
+}
+#endif
 
 static void modelviewer_run(void)
 {
@@ -674,6 +836,16 @@ static void modelviewer_run(void)
 
    width  = vr ? vr_eye_width * 2 : engine_width;
    height = vr ? vr_eye_height    : engine_height;
+
+#ifdef HAVE_VULKAN
+   if (renderer_is_vulkan())
+   {
+      modelviewer_run_vulkan(width, height, scene, vr);
+      return;
+   }
+#endif
+
+   apply_scene_state_gl();
 
    glBindFramebuffer(GL_FRAMEBUFFER, hw_render.get_current_framebuffer());
    glViewport(0, 0, width, height);
@@ -768,4 +940,5 @@ const engine_program_t engine_program_modelviewer = {
    modelviewer_context_reset,
    modelviewer_update_variables,
    modelviewer_check_input,
+   modelviewer_context_destroy,
 };

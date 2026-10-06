@@ -28,6 +28,7 @@ extern retro_input_poll_t input_poll_cb;
 extern retro_input_state_t input_state_cb;
 extern struct retro_hw_render_callback hw_render;
 extern retro_video_refresh_t video_cb;
+extern retro_environment_t environ_cb;
 
 extern unsigned engine_width;
 extern unsigned engine_height;
@@ -37,6 +38,9 @@ extern GLuint tex;
 
 extern bool location_camera_control_enable;
 extern bool sensor_enable;
+
+extern enum retro_hw_context_type active_hw_context;
+extern bool renderer_is_vulkan(void);
 
 typedef struct
 {
@@ -56,6 +60,7 @@ typedef struct engine_program
    void (*context_reset)(void);
    void (*update_variables)(retro_environment_t environ_cb);
    glm::vec3 (*check_input)(void);
+   void (*context_destroy)(void); /* optional, may be NULL */
 } engine_program_t;
 
 extern const engine_program_t engine_program_instancingviewer;

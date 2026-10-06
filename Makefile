@@ -1,4 +1,5 @@
 STATIC_LINKING=0
+HAVE_VULKAN ?= 0
 
 ifeq ($(platform),)
 platform = unix
@@ -23,6 +24,7 @@ ifneq (,$(findstring unix,$(platform)))
    TARGET := $(TARGET_NAME)_libretro.so
    fpic := -fPIC
    SHARED := -shared -Wl,--version-script=link.T -Wl,--no-undefined
+   HAVE_VULKAN := 1
 ifneq (,$(findstring gles,$(platform)))
    GLES = 1
 else
@@ -263,6 +265,9 @@ else
    GL_LIB := -L. -lopengl32
 endif
 
+ifeq ($(HAVE_VULKAN),1)
+   CXXFLAGS     += -DHAVE_VULKAN
+endif
 
 ifeq ($(DEBUG), 1)
    CXXFLAGS += -O0 -g
