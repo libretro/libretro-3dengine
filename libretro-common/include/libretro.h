@@ -2872,6 +2872,336 @@ enum retro_mod
 #define RETRO_ENVIRONMENT_GET_HDR_MAX_NITS (92 | RETRO_ENVIRONMENT_EXPERIMENTAL)
 
 /**
+ * Negotiates multi-channel audio output.
+ *
+ * The classic batch callbacks carry interleaved stereo. A core whose
+ * source has more channels - a console with discrete surround, a
+ * media player, an arcade board with a distinct rear pair - has had
+ * to fold them to two at the libretro boundary. This call hands the
+ * core a pair of batch entry points that take a frame of any of the
+ * layouts below, so the channels reach the frontend as they are;
+ * what happens to them then is the frontend's: sent discretely to a
+ * device that has those speakers, folded to stereo for one that does
+ * not, folded and re-expanded as the user's settings say.
+ *
+ * On success the frontend fills the supplied
+ * \c retro_audio_sample_multi_callback: \c batch_int16 always, and
+ * \c batch_float when it also answers \c true to
+ * \c RETRO_ENVIRONMENT_GET_AUDIO_SAMPLE_BATCH_FLOAT (a core wanting
+ * float should query that first; a NULL \c batch_float means int16
+ * only). Either function takes interleaved frames of \c channels
+ * samples, in the ascending-bit order of \c layout - front left,
+ * front right, front centre, LFE, back left, back right, ...
+ * - which is the order the WAVEFORMATEXTENSIBLE channel mask, ALSA,
+ * SDL and the WAV format use. \c channels must equal the number of
+ * bits set in \c layout. The return value has the meaning of
+ * \c retro_audio_sample_batch_t.
+ *
+ * Contract:
+ *  - Negotiate once, during \c retro_load_game(). The layout may
+ *    change from call to call (a game switching from stereo to 5.1),
+ *    but the core commits to one sample format for the loaded game,
+ *    as with the float call, and does not mix these entry points
+ *    with the classic ones.
+ *  - A layout with a bit the frontend does not know, or more than
+ *    eight channels, is refused: the call returns 0 frames. Cores
+ *    should use the \c RETRO_AUDIO_LAYOUT_ constants.
+ *  - The function pointers are owned by the frontend and remain
+ *    valid until \c retro_unload_game().
+ *  - Frontends that do not recognise this call return \c false; the
+ *    core keeps folding to stereo and using the classic callbacks.
+ *
+ * @param[out] data <tt>struct retro_audio_sample_multi_callback *</tt>.
+ * @return \c true if multi-channel output is supported, \c false otherwise.
+ * @see retro_audio_sample_multi_callback
+ * @see RETRO_AUDIO_SPEAKER_FRONT_LEFT
+ */
+#define RETRO_ENVIRONMENT_GET_AUDIO_SAMPLE_BATCH_MULTI (94 | RETRO_ENVIRONMENT_EXPERIMENTAL)
+
+/**
+ * Notifies the frontend that this core can render stereoscopic VR content
+ * and describes what it needs from the frontend to do so.
+ *
+ * Should be called from retro_load_game(), after RETRO_ENVIRONMENT_SET_HW_RENDER
+ * if hardware rendering is used. VR content requires hardware rendering in
+ * practice, since the frontend provides a hardware framebuffer containing
+ * both eye images.
+ *
+ * A core that supports both a flat and a VR presentation of the same
+ * content should call this unconditionally and let the frontend's return
+ * value decide: returning false means no VR session is available (headset
+ * build not active, or the platform does not support VR), in which case
+ * the core continues exactly as if the call had never been made.
+ *
+ * When VR is requested successfully, the core must report its VR framebuffer
+ * geometry through retro_get_system_av_info(): the base and maximum geometry
+ * must both be 2W by H, where W and H are the dimensions of one eye.
+ *
+ * The frontend uses this geometry when allocating the hardware framebuffer;
+ * recommended_eye_width and recommended_eye_height do not determine the
+ * framebuffer allocation.
+ *
+ * If RETRO_VR_FRAME_TARGET_RESIZED is subsequently reported, the eye target
+ * dimensions have changed. The core must call this environment command again
+ * and update its system AV info so that the base and maximum geometry are
+ * again 2W by H. Otherwise the new stereo framebuffer may exceed the
+ * currently allocated maximum geometry.
+ *
+ * The frontend samples the eye poses and field of view once per frame and
+ * passes that same sample to the core through
+ * RETRO_ENVIRONMENT_GET_VR_FRAME_STATE. When submitting the compositor
+ * layer for that frame, the frontend must use the same eye poses and FOV
+ * that were supplied to the core. This keeps the compositor submission
+ * synchronized with the sample used to render the eye images and avoids
+ * reprojection errors caused by using a different pose sample.
+ *
+ * @param[in,out] data <tt>struct retro_vr_content_info *</tt>.
+ * If non-NULL, requests VR presentation using the supplied content
+ * information. If NULL, disables the current VR presentation.
+ *
+ * @returns true if the requested operation was accepted and successfully
+ * applied, false if VR is unavailable or the request cannot be satisfied.
+ *
+ * @see retro_vr_content_info
+ * @see RETRO_ENVIRONMENT_GET_VR_FRAME_STATE
+ */
+#define RETRO_ENVIRONMENT_SET_VR_CONTENT_INFO (95 | RETRO_ENVIRONMENT_EXPERIMENTAL)
+
+enum retro_vr_layout {
+   /* Core renders both eyes into the frontend framebuffer (the one from
+    * retro_hw_render_callback::get_current_framebuffer), left eye in
+    * x=[0,W), right eye in x=[W,2W), and calls retro_video_refresh_t ONCE per
+    * retro_run() with RETRO_HW_FRAME_BUFFER_VALID, width=2W, height=H.
+    * Origin follows hw_render.bottom_left_origin. Alpha is ignored. */
+   RETRO_VR_LAYOUT_SIDE_BY_SIDE = 0,
+   RETRO_VR_LAYOUT_DUMMY = INT_MAX
+};
+
+enum retro_vr_reference_space {
+   RETRO_VR_REFERENCE_SPACE_LOCAL = 0,  /* seated: origin = head at session start/recenter */
+   RETRO_VR_REFERENCE_SPACE_STAGE = 1,  /* standing: origin = floor */
+   RETRO_VR_REFERENCE_SPACE_DUMMY = INT_MAX
+};
+
+/**
+ * Details a core provides when requesting a VR session via
+ * RETRO_ENVIRONMENT_SET_VR_CONTENT_INFO.
+ */
+struct retro_vr_content_info
+{
+   /**
+    * true if the core renders both eyes natively into the VR
+    * framebuffer using the layout specified by layout
+    *
+    * false if the core renders mono content and the frontend
+    * derives the stereo presentation.
+    */
+   bool stereo_native;
+
+   /**
+    * A core has requested a flat presentation of its content, even if it
+    * is capable of producing VR output.
+    */
+   bool request_flat;
+
+   /**
+    * Requested interpupillary distance in meters, used only if the
+    * frontend cannot obtain one from the runtime/HMD itself.
+    *
+    * 0.0f means "use whatever the frontend/runtime already knows".
+    */
+   float ipd_hint_m;
+
+   enum retro_vr_layout layout;
+   enum retro_vr_reference_space reference_space;
+
+   /**
+    * Output: recommended width of one eye's render target.
+    *
+    * The core must not use this value to determine its system AV geometry.
+    * The VR framebuffer geometry is reported separately through
+    * retro_get_system_av_info() as 2W x H.
+    */
+   unsigned recommended_eye_width;
+
+   /**
+    * Output: recommended height of one eye's render target.
+    */
+   unsigned recommended_eye_height;
+};
+
+#define RETRO_VR_FRAME_RECENTERED     (1u << 0)  /* user recentered: re-capture any reference */
+#define RETRO_VR_FRAME_TARGET_RESIZED (1u << 1)  /* eye size changed: call SET_VR_CONTENT_INFO again */
+
+/**
+ * Retrieves the per-eye state plus per-frame event flags
+ * (RETRO_VR_FRAME_RECENTERED / RETRO_VR_FRAME_TARGET_RESIZED) for the
+ * current retro_run() call.
+ *
+ * The frontend samples both eye states once per frame, immediately before
+ * retro_run(), and returns that same sample for the duration of that
+ * retro_run() call.
+ *
+ * The position and orientation in each eye state are the eye-to-tracking
+ * transforms used for that frame. The FOV values are the same values the
+ * frontend must use when submitting the compositor layer for the
+ * corresponding frame.
+ *
+ * @param[out] data <tt>struct retro_vr_frame_state *</tt>.
+ * @return false if no VR session exists or no valid sample is available.
+ */
+#define RETRO_ENVIRONMENT_GET_VR_FRAME_STATE (96 | RETRO_ENVIRONMENT_EXPERIMENTAL)
+
+
+/**
+ * Identifies which eye a \ref retro_vr_eye_state describes, and the index
+ * of that eye within the two-element array passed to
+ * RETRO_ENVIRONMENT_GET_VR_FRAME_STATE.
+ */
+enum retro_vr_eye
+{
+   RETRO_VR_EYE_LEFT  = 0,
+   RETRO_VR_EYE_RIGHT = 1,
+
+   /** @private Defined to ensure <tt>sizeof(retro_vr_eye) == sizeof(int)</tt>. Do not use. */
+   RETRO_VR_EYE_DUMMY = INT_MAX
+};
+
+/**
+ * One eye's head-tracked pose and asymmetric field of view for the current
+ * frame, in the frontend's tracking space (meters, right-handed, Y up).
+ *
+ * position and orientation describe the eye-to-tracking-space transform,
+ * not its inverse.
+ *
+ * The quaternion is stored in (x, y, z, w) order. This is intentionally
+ * different from APIs such as GLM where glm::quat is constructed as
+ * (w, x, y, z).
+ *
+ * @see RETRO_ENVIRONMENT_GET_VR_FRAME_STATE
+ */
+struct retro_vr_eye_state
+{
+   /**
+    * Eye position in tracking space, in meters.
+    */
+   float position[3];
+
+   /**
+    * Eye orientation in tracking space, as a quaternion (x, y, z, w).
+    *
+    * This is the orientation of the eye relative to tracking space, not
+    * the inverse/view orientation.
+    */
+   float orientation[4];
+
+   /**
+    * Tangent of the positive half-angle from the eye's forward axis to
+    * each frustum edge, in the order:
+    *
+    *   [0] left
+    *   [1] right
+    *   [2] up
+    *   [3] down
+    *
+    * All four values are positive magnitudes. They describe the distance
+    * of each frustum edge from the forward axis in tangent space; they are
+    * not signed OpenXR angles.
+    *
+    * The four values are independent because HMD eye frustums are normally
+    * asymmetric.
+    *
+    * For example, if the left and right tangent values are l and r, and
+    * the up and down tangent values are u and d, the projection frustum
+    * spans:
+    *
+    *   left   = -l
+    *   right  =  r
+    *   bottom = -d
+    *   top    =  u
+    *
+    * A frontend converting from APIs that represent the corresponding
+    * angles as signed values must use their magnitudes.
+    */
+   float fov_tan[4];
+};
+
+struct retro_vr_frame_state {
+   struct retro_vr_eye_state eyes[2];
+   uint32_t flags;
+};
+
+/**
+ * Retrieves the current head-tracked pose.
+ *
+ * The frontend samples the HMD once per frame, immediately before
+ * retro_run(), and returns the same sample for the duration of that
+ * retro_run() call.
+ */
+#define RETRO_ENVIRONMENT_GET_VR_HEAD_POSE (97 | RETRO_ENVIRONMENT_EXPERIMENTAL)
+
+#define RETRO_VR_HEAD_POSE_POSITION_VALID    (1u << 0)
+#define RETRO_VR_HEAD_POSE_ORIENTATION_VALID (1u << 1)
+#define RETRO_VR_HEAD_POSE_VELOCITY_VALID    (1u << 2)
+
+/**
+ * Head pose and motion in the frontend's tracking space (meters,
+ * seconds, right-handed, Y up).
+ *
+ * position and orientation describe the head-to-tracking-space transform,
+ * not its inverse. The orientation quaternion rotates vectors from head
+ * space into tracking space.
+ *
+ * linear_velocity is the velocity of the head-space origin, expressed in
+ * tracking-space coordinates. angular_velocity is the head's angular
+ * velocity, expressed in tracking-space coordinates. Velocity fields are
+ * valid only when RETRO_VR_HEAD_POSE_VELOCITY_VALID is set.
+ */
+struct retro_vr_head_pose
+{
+   /** Head position in tracking space, in meters. */
+   float position[3];
+
+   /** Head orientation in tracking space, quaternion (x, y, z, w). */
+   float orientation[4];
+
+   /** Linear velocity in meters/second. */
+   float linear_velocity[3];
+
+   /** Angular velocity in radians/second. */
+   float angular_velocity[3];
+
+   /* orientation/position are valid */
+   uint32_t flags;
+};
+
+/* Speaker positions, as bits of a layout mask; a frame's channels are
+ * interleaved in ascending bit order. The bits are those of the
+ * WAVEFORMATEXTENSIBLE channel mask. */
+#define RETRO_AUDIO_SPEAKER_FRONT_LEFT            0x001
+#define RETRO_AUDIO_SPEAKER_FRONT_RIGHT           0x002
+#define RETRO_AUDIO_SPEAKER_FRONT_CENTER          0x004
+#define RETRO_AUDIO_SPEAKER_LOW_FREQUENCY         0x008
+#define RETRO_AUDIO_SPEAKER_BACK_LEFT             0x010
+#define RETRO_AUDIO_SPEAKER_BACK_RIGHT            0x020
+#define RETRO_AUDIO_SPEAKER_FRONT_LEFT_OF_CENTER  0x040
+#define RETRO_AUDIO_SPEAKER_FRONT_RIGHT_OF_CENTER 0x080
+#define RETRO_AUDIO_SPEAKER_BACK_CENTER           0x100
+#define RETRO_AUDIO_SPEAKER_SIDE_LEFT             0x200
+#define RETRO_AUDIO_SPEAKER_SIDE_RIGHT            0x400
+
+/* The layouts a core is expected to use. Others are accepted where the
+ * frontend knows every bit. */
+#define RETRO_AUDIO_LAYOUT_MONO   (RETRO_AUDIO_SPEAKER_FRONT_CENTER)
+#define RETRO_AUDIO_LAYOUT_STEREO (RETRO_AUDIO_SPEAKER_FRONT_LEFT | RETRO_AUDIO_SPEAKER_FRONT_RIGHT)
+#define RETRO_AUDIO_LAYOUT_2_1    (RETRO_AUDIO_LAYOUT_STEREO | RETRO_AUDIO_SPEAKER_LOW_FREQUENCY)
+#define RETRO_AUDIO_LAYOUT_QUAD   (RETRO_AUDIO_LAYOUT_STEREO | RETRO_AUDIO_SPEAKER_BACK_LEFT | RETRO_AUDIO_SPEAKER_BACK_RIGHT)
+#define RETRO_AUDIO_LAYOUT_5_1    (RETRO_AUDIO_LAYOUT_QUAD | RETRO_AUDIO_SPEAKER_FRONT_CENTER | RETRO_AUDIO_SPEAKER_LOW_FREQUENCY)
+#define RETRO_AUDIO_LAYOUT_5_1_SIDE (RETRO_AUDIO_LAYOUT_STEREO | RETRO_AUDIO_SPEAKER_FRONT_CENTER | RETRO_AUDIO_SPEAKER_LOW_FREQUENCY \
+                                    | RETRO_AUDIO_SPEAKER_SIDE_LEFT | RETRO_AUDIO_SPEAKER_SIDE_RIGHT)
+#define RETRO_AUDIO_LAYOUT_7_1    (RETRO_AUDIO_LAYOUT_5_1 | RETRO_AUDIO_SPEAKER_SIDE_LEFT | RETRO_AUDIO_SPEAKER_SIDE_RIGHT)
+
+/**
  * Result of \c RETRO_ENVIRONMENT_GET_MEMORY_STATUS.
  *
  * Sizes are in bytes; a field the frontend cannot determine is left at 0.
@@ -3052,7 +3382,48 @@ struct retro_vfs_dir_handle;
  */
 #define RETRO_VFS_STAT_IS_CHARACTER_SPECIAL   (1 << 2)
 
+/**
+ * Indicates that the current user cannot write to the given path.
+ * POSIX: the owner write bit is clear.
+ * Windows/UWP: \c FILE_ATTRIBUTE_READONLY is set.
+ * Frontends that cannot determine this never set the flag.
+ * @since VFS API v5
+ */
+#define RETRO_VFS_STAT_IS_READONLY            (1 << 3)
+
 /** @} */
+
+/**
+ * @defgroup RETRO_VFS_COPY Copy Flags
+ * @since VFS API v5
+ * @{
+ */
+
+/** Replace \c dst if it already exists. Without it an existing \c dst is an error. */
+#define RETRO_VFS_COPY_OVERWRITE              (1 << 0)
+
+/** @} */
+
+/**
+ * @defgroup RETRO_VFS_COPY_STATUS Copy Status
+ * Values returned by \c retro_vfs_copy_step_t.
+ * @since VFS API v5
+ * @{
+ */
+/** The copy is still in progress. */
+#define RETRO_VFS_COPY_RUNNING                (0)
+/** The copy completed; \c dst is complete and closed. */
+#define RETRO_VFS_COPY_DONE                   (1)
+/** The copy failed or was cancelled; no partial \c dst remains. */
+#define RETRO_VFS_COPY_FAILED                 (-1)
+/** @} */
+
+/**
+ * Opaque handle to an in-progress file copy.
+ * @see retro_vfs_copy_begin_t
+ * @since VFS API v5
+ */
+struct retro_vfs_copy_handle;
 
 /**
  * Returns the path that was used to open this file.
@@ -3246,6 +3617,124 @@ typedef int (RETRO_CALLCONV *retro_vfs_stat_t)(const char *path, int32_t *size);
 typedef int (RETRO_CALLCONV *retro_vfs_stat_64_t)(const char *path, int64_t *size);
 
 /**
+ * Sets or clears the read-only state of a file or directory.
+ *
+ * POSIX: sets or clears the write bits of the mode, leaving the rest intact.
+ * Windows/UWP: sets or clears \c FILE_ATTRIBUTE_READONLY.
+ *
+ * @param path The path to the file or directory.
+ * @param readonly Non-zero to make the path read-only,
+ * zero to make it writable.
+ * @return 0 on success,
+ * or -1 if \c path does not exist or the platform or file system
+ * cannot store a read-only state.
+ * @see path_set_readonly
+ * @see RETRO_VFS_STAT_IS_READONLY
+ * @since VFS API v5
+ */
+typedef int (RETRO_CALLCONV *retro_vfs_set_readonly_t)(const char *path, int readonly);
+
+/**
+ * Gets the last modification time of a file or directory.
+ *
+ * @param path The path to the file or directory.
+ * @param[out] mtime Set to the modification time
+ * in seconds since 1970-01-01T00:00:00Z. May be negative.
+ * @return 0 on success,
+ * or -1 if \c path does not exist or the platform
+ * cannot report a modification time.
+ * @see path_get_mtime
+ * @since VFS API v5
+ */
+typedef int (RETRO_CALLCONV *retro_vfs_get_mtime_t)(const char *path, int64_t *mtime);
+
+/**
+ * Sets the last modification time of a file or directory.
+ *
+ * The frontend rounds to the file system's resolution,
+ * so a following \c retro_vfs_get_mtime_t may report a different value.
+ *
+ * @param path The path to the file or directory.
+ * @param mtime The modification time in seconds since 1970-01-01T00:00:00Z.
+ * @return 0 on success,
+ * or -1 if \c path does not exist or the platform or file system
+ * does not allow the modification time to be set.
+ * @see path_set_mtime
+ * @since VFS API v5
+ */
+typedef int (RETRO_CALLCONV *retro_vfs_set_mtime_t)(const char *path, int64_t mtime);
+
+/**
+ * Starts copying a single regular file and returns without moving any of it.
+ *
+ * A copy is a resumable operation that the caller advances with
+ * \c retro_vfs_copy_step_t, each step bounded by a byte budget the caller
+ * chooses. The frontend keeps no thread and holds no lock for it; a caller
+ * that wants the transfer off its own thread drives the steps from wherever
+ * it likes. No call in this group ever waits for more than the requested
+ * step.
+ *
+ * \c dst is the full path of the new file, not a directory; missing parent
+ * directories are created. Metadata (modification time, read-only state)
+ * of \c dst after the copy is platform-defined. Either path may belong to
+ * any file system the frontend supports.
+ *
+ * Checks that can be made up front (missing or non-regular \c src,
+ * \c dst is a directory, \c dst exists without \c RETRO_VFS_COPY_OVERWRITE,
+ * \c src equals \c dst) fail here by returning \c NULL.
+ *
+ * @param src The path to the file to copy. Must be a regular file.
+ * @param dst The full path of the destination file. Must differ from \c src.
+ * @param flags Bitwise combination of \c RETRO_VFS_COPY flags, or 0.
+ * @return A handle to poll and close, or \c NULL if the copy could not start.
+ * @see retro_vfs_copy_step_t
+ * @see retro_vfs_copy_close_t
+ * @see filestream_copy_begin
+ * @see RETRO_VFS_COPY
+ * @since VFS API v5
+ */
+typedef struct retro_vfs_copy_handle *(RETRO_CALLCONV *retro_vfs_copy_begin_t)(const char *src, const char *dst, unsigned flags);
+
+/**
+ * Advances a copy started with \c retro_vfs_copy_begin_t by at most
+ * \c max_bytes and reports its state.
+ *
+ * The budget is the caller's latency/throughput dial: a few MiB from a
+ * frame loop keeps each call short; a very large budget (or repeated calls
+ * until the status leaves \c RETRO_VFS_COPY_RUNNING) runs the transfer at
+ * the full speed of the platform's copy primitive with no user-space
+ * buffer where the kernel can move the bytes itself.
+ *
+ * A step never moves more than \c max_bytes, but it may move less, and it
+ * may report \c RETRO_VFS_COPY_DONE early if the platform completed the
+ * copy without moving bytes (e.g. a file-system clone).
+ *
+ * @param handle The copy.
+ * @param max_bytes Upper bound on bytes moved by this call; 0 selects a
+ * frontend default sized for a frame loop (a few MiB).
+ * @param[out] bytes_done Bytes written to \c dst so far. May be \c NULL.
+ * @param[out] bytes_total Size of \c src in bytes. May be \c NULL.
+ * @return One of the \c RETRO_VFS_COPY_STATUS values.
+ * @since VFS API v5
+ */
+typedef int (RETRO_CALLCONV *retro_vfs_copy_step_t)(struct retro_vfs_copy_handle *handle, int64_t max_bytes, int64_t *bytes_done, int64_t *bytes_total);
+
+/**
+ * Releases a copy handle.
+ *
+ * If the copy is still running it is cancelled and the partial \c dst
+ * removed; nothing is waited for. Must be called exactly once for every
+ * non-NULL handle from \c retro_vfs_copy_begin_t, whatever
+ * \c retro_vfs_copy_step_t reported.
+ *
+ * @param handle The copy.
+ * @return 0 if the copy had completed successfully, or -1 if it failed,
+ * was cancelled, or was still running when closed.
+ * @since VFS API v5
+ */
+typedef int (RETRO_CALLCONV *retro_vfs_copy_close_t)(struct retro_vfs_copy_handle *handle);
+
+/**
  * Creates a directory at the given path.
  *
  * @param dir The desired location of the new directory.
@@ -3316,6 +3805,29 @@ typedef const char *(RETRO_CALLCONV *retro_vfs_dirent_get_name_t)(struct retro_v
  * @since VFS API v3
  */
 typedef bool (RETRO_CALLCONV *retro_vfs_dirent_is_dir_t)(struct retro_vfs_dir_handle *dirstream);
+
+/**
+ * Gets information about the directory entry most recently returned by
+ * \c retro_vfs_readdir_t, without opening it or building its path.
+ *
+ * Only valid after a \c retro_vfs_readdir_t call that returned \c true,
+ * and before the next \c retro_vfs_readdir_t or \c retro_vfs_closedir_t
+ * call on the same handle.
+ *
+ * @param dirstream The directory being enumerated.
+ * @param[out] size The entry's size in bytes (0 for directories).
+ * May be \c NULL, in which case this value is ignored.
+ * @param[out] mtime The entry's modification time
+ * in seconds since 1970-01-01T00:00:00Z.
+ * May be \c NULL, in which case this value is ignored.
+ * @return A bitmask of \c RETRO_VFS_STAT flags for the entry
+ * (\c RETRO_VFS_STAT_IS_VALID is always set on success),
+ * or 0 if the frontend cannot provide entry information.
+ * @see retro_dirent_stat
+ * @see RETRO_VFS_STAT
+ * @since VFS API v5
+ */
+typedef int (RETRO_CALLCONV *retro_vfs_dirent_stat_t)(struct retro_vfs_dir_handle *dirstream, int64_t *size, int64_t *mtime);
 
 /**
  * Closes the given directory and release its resources.
@@ -3404,6 +3916,28 @@ struct retro_vfs_interface
    /* VFS API v4 */
    /** @copydoc retro_vfs_stat_64_t */
    retro_vfs_stat_64_t stat_64;
+
+   /* VFS API v5 */
+   /** @copydoc retro_vfs_set_readonly_t */
+   retro_vfs_set_readonly_t set_readonly;
+
+   /** @copydoc retro_vfs_get_mtime_t */
+   retro_vfs_get_mtime_t get_mtime;
+
+   /** @copydoc retro_vfs_set_mtime_t */
+   retro_vfs_set_mtime_t set_mtime;
+
+   /** @copydoc retro_vfs_copy_begin_t */
+   retro_vfs_copy_begin_t copy_begin;
+
+   /** @copydoc retro_vfs_copy_step_t */
+   retro_vfs_copy_step_t copy_step;
+
+   /** @copydoc retro_vfs_copy_close_t */
+   retro_vfs_copy_close_t copy_close;
+
+   /** @copydoc retro_vfs_dirent_stat_t */
+   retro_vfs_dirent_stat_t dirent_stat;
 };
 
 /**
@@ -3754,6 +4288,20 @@ enum retro_hw_render_context_negotiation_interface_type
     * @see retro_hw_render_context_negotiation_interface_vulkan
     */
    RETRO_HW_RENDER_CONTEXT_NEGOTIATION_INTERFACE_VULKAN = 0,
+
+   /**
+    * Denotes a context negotiation interface for Direct3D 12.
+    * Carries the highest hardware render interface version the core can use.
+    * @see retro_hw_render_context_negotiation_interface_d3d12
+    */
+   RETRO_HW_RENDER_CONTEXT_NEGOTIATION_INTERFACE_D3D12 = 1,
+
+   /**
+    * Denotes a context negotiation interface for Direct3D 11.
+    * Carries the highest hardware render interface version the core can use.
+    * @see retro_hw_render_context_negotiation_interface_d3d11
+    */
+   RETRO_HW_RENDER_CONTEXT_NEGOTIATION_INTERFACE_D3D11 = 2,
 
    /**
     * @private Defined to ensure <tt>sizeof(retro_hw_render_context_negotiation_interface_type) == sizeof(int)</tt>.
@@ -8019,6 +8567,40 @@ struct retro_audio_sample_float_callback
    /* Set by the frontend. The core calls this instead of the int16
     * batch callback once float output has been negotiated. */
    retro_audio_sample_batch_float_t batch;
+};
+
+/**
+ * Renders multiple audio frames of a multi-channel layout.
+ *
+ * Valid only after the frontend has answered \c true to
+ * \c RETRO_ENVIRONMENT_GET_AUDIO_SAMPLE_BATCH_MULTI.
+ *
+ * @param data Interleaved frames of \c channels samples, one sample
+ *     a speaker in the ascending-bit order of \c layout; int16 or
+ *     float in [-1.0, 1.0] by the entry point.
+ * @param frames The number of frames in \c data.
+ * @param channels Samples per frame: the bits set in \c layout.
+ * @param layout The speaker mask, from the \c RETRO_AUDIO_SPEAKER_ bits.
+ * @return The number of frames processed; 0 for a layout the frontend
+ *     does not take.
+ * @see RETRO_ENVIRONMENT_GET_AUDIO_SAMPLE_BATCH_MULTI
+ */
+typedef size_t (RETRO_CALLCONV *retro_audio_sample_batch_multi_int16_t)(
+      const int16_t *data, size_t frames, unsigned channels, unsigned layout);
+typedef size_t (RETRO_CALLCONV *retro_audio_sample_batch_multi_float_t)(
+      const float *data, size_t frames, unsigned channels, unsigned layout);
+
+/**
+ * Multi-channel batch callbacks handed to the core in response to
+ * \c RETRO_ENVIRONMENT_GET_AUDIO_SAMPLE_BATCH_MULTI.
+ */
+struct retro_audio_sample_multi_callback
+{
+   /* Set by the frontend. */
+   retro_audio_sample_batch_multi_int16_t batch_int16;
+   /* Set by the frontend when float output is negotiated too, NULL
+    * otherwise. */
+   retro_audio_sample_batch_multi_float_t batch_float;
 };
 
 /**

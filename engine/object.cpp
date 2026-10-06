@@ -131,10 +131,10 @@ namespace OBJ
       }
    }
 
-   static map<string, Material> parse_mtllib(const string& path, map<string, std1::shared_ptr<Texture> >& textures)
+   static map<string, RawMaterial> parse_mtllib(const string& path)
    {
-      map<string, Material> materials;
-      Material current;
+      map<string, RawMaterial> materials;
+      RawMaterial current;
       string current_mtl;
       string line;
 
@@ -155,7 +155,7 @@ namespace OBJ
             if (current_mtl.size())
                materials[current_mtl] = current;
 
-            current = Material();
+            current = RawMaterial();
             current_mtl = data;
          }
          else if (type == "Ka")
@@ -171,25 +171,9 @@ namespace OBJ
          else if (type == "Tr")
             current.alpha_mod = 1.0f - String::stof(data);
          else if (type == "map_Kd")
-         {
-            if (!textures[data])
-            {
-               string diffuse_path = Path::join(Path::basedir(path), data);
-               textures[data] = std1::shared_ptr<Texture>(new Texture(diffuse_path));
-            }
-
-            current.diffuse_map = textures[data];
-         }
+            current.diffuse_map = Path::join(Path::basedir(path), data);
          else if (type == "map_Ka")
-         {
-            if (!textures[data])
-            {
-               string ambient_path = Path::join(Path::basedir(path), data);
-               textures[data] = std1::shared_ptr<Texture>(new Texture(ambient_path));
-            }
-
-            current.ambient_map = textures[data];
-         }
+            current.ambient_map = Path::join(Path::basedir(path), data);
       }
 
       materials[current_mtl] = current;
@@ -197,25 +181,35 @@ namespace OBJ
       return materials;
    }
 
-   vector<std1::shared_ptr<Mesh> > load_from_file(const string& path)
+   static void flush_part(vector<Part>& parts, vector<Vertex>& vertices,
+         const RawMaterial& material)
+   {
+      if (!vertices.size())
+         return;
+
+      Part part;
+      part.vertices.swap(vertices);
+      part.material = material;
+      parts.push_back(part);
+   }
+
+   vector<Part> load_parts(const string& path)
    {
       vector<vec3> vertex;
       vector<vec3> normal;
       vector<vec2> tex;
 
       vector<Vertex> vertices;
+      vector<Part> parts;
 
-      /* Texture cache. */
-      map<string, std1::shared_ptr<Texture> > textures;
-      Material current_material;
+      RawMaterial current_material;
       string line;
 
-      map<string, Material> materials;
+      map<string, RawMaterial> materials;
       ifstream file(path.c_str(), ios::in);
-      vector<std1::shared_ptr<Mesh> > meshes;
 
       if (!file.is_open())
-         return meshes;
+         return parts;
 
       for (; getline(file, line); )
       {
@@ -235,55 +229,63 @@ namespace OBJ
             parse_vertex(data, vertices, vertex, normal, tex);
          else if (type == "texture") // Not standard OBJ, but do it like this for simplicity ...
          {
-            if (vertices.size()) // Different texture, new mesh.
-            {
-               std1::shared_ptr<Mesh> mesh(new Mesh());
-               mesh->set_vertices(vertices);
-               vertices.clear();
+            flush_part(parts, vertices, current_material); // Different texture, new part.
 
-               mesh->set_material(current_material);
-               meshes.push_back(mesh);
-            }
-
-            if (!textures[data])
-            {
-               string texture_path = Path::join(Path::basedir(path), data + ".png");
-               textures[data] = std1::shared_ptr<Texture>(new Texture(texture_path));
-            }
-
-            current_material = Material();
-            current_material.diffuse_map = textures[data];
-            current_material.ambient_map = textures[data];
+            current_material = RawMaterial();
+            current_material.diffuse_map = Path::join(Path::basedir(path), data + ".png");
+            current_material.ambient_map = current_material.diffuse_map;
          }
          else if (type == "usemtl")
          {
-            if (vertices.size()) // Different texture, new mesh.
-            {
-               std1::shared_ptr<Mesh> mesh(new Mesh());
-               mesh->set_vertices(vertices);
-               vertices.clear();
-
-               mesh->set_material(current_material);
-               meshes.push_back(mesh);
-            }
-
+            flush_part(parts, vertices, current_material); // Different material, new part.
             current_material = materials[data];
          }
          else if (type == "mtllib")
-            materials = parse_mtllib(Path::join(Path::basedir(path), data), textures);
+            materials = parse_mtllib(Path::join(Path::basedir(path), data));
       }
 
-      if (vertices.size())
-      {
-         std1::shared_ptr<Mesh> mesh(new Mesh());
-         mesh->set_vertices(vertices);
-         vertices.clear();
+      flush_part(parts, vertices, current_material);
+      return parts;
+   }
 
-         mesh->set_material(current_material);
+   static std1::shared_ptr<Texture> cached_texture(const string& path,
+         map<string, std1::shared_ptr<Texture> >& cache)
+   {
+      if (!path.size())
+         return std1::shared_ptr<Texture>();
+
+      std1::shared_ptr<Texture>& slot = cache[path];
+      if (!slot)
+         slot = std1::shared_ptr<Texture>(new Texture(path));
+      return slot;
+   }
+
+   vector<std1::shared_ptr<Mesh> > load_from_file(const string& path)
+   {
+      unsigned i;
+      vector<Part> parts = load_parts(path);
+      vector<std1::shared_ptr<Mesh> > meshes;
+      map<string, std1::shared_ptr<Texture> > textures; /* Texture cache. */
+
+      for (i = 0; i < parts.size(); i++)
+      {
+         const RawMaterial& raw = parts[i].material;
+         Material material;
+
+         material.ambient        = raw.ambient;
+         material.diffuse        = raw.diffuse;
+         material.specular       = raw.specular;
+         material.specular_power = raw.specular_power;
+         material.alpha_mod      = raw.alpha_mod;
+         material.diffuse_map    = cached_texture(raw.diffuse_map, textures);
+         material.ambient_map    = cached_texture(raw.ambient_map, textures);
+
+         std1::shared_ptr<Mesh> mesh(new Mesh());
+         mesh->set_vertices(parts[i].vertices);
+         mesh->set_material(material);
          meshes.push_back(mesh);
       }
 
       return meshes;
    }
 }
-
