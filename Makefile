@@ -186,6 +186,7 @@ else ifneq (,$(findstring webos,$(platform)))
       CXXFLAGS += -mfpu=neon
       HAVE_NEON = 1
    endif
+   HAVE_VULKAN = 0
 
 # Windows MSVC 2010 x64
 else ifeq ($(platform), windows_msvc2010_x64)
