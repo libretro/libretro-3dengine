@@ -102,9 +102,13 @@ libretro-build-osx-arm64:
 
 # Linux 64-bit
 libretro-build-linux-x64:
+  image: $CI_SERVER_HOST:5050/libretro-infrastructure/libretro-build-amd64-ubuntu:backports
   extends:
     - .libretro-linux-x64-make-default
     - .core-defs
+  variables:
+    CC: /usr/bin/gcc-11
+    CXX: /usr/bin/g++-11
 
 # Linux ARM 64-bit
 libretro-build-linux-aarch64:
@@ -114,9 +118,13 @@ libretro-build-linux-aarch64:
 
 # Linux 32-bit
 libretro-build-linux-i686:
+  image: $CI_SERVER_HOST:5050/libretro-infrastructure/libretro-build-amd64-ubuntu:backports
   extends:
     - .libretro-linux-i686-make-default
     - .core-defs
+  variables:
+    CC: /usr/bin/gcc-11
+    CXX: /usr/bin/g++-11
 
 #################################### MISC ####################################
 # webOS 32-bit
