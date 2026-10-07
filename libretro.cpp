@@ -438,23 +438,35 @@ static void location_deinitialized(void)
 // VAR
 static bool vr_request_session(void)
 {
-   struct retro_vr_content_info vr;
-   memset(&vr, 0, sizeof(vr));
-   vr.stereo_native   = true;
-   vr.ipd_hint_m      = 0.0f;
-   vr.layout          = RETRO_VR_LAYOUT_SIDE_BY_SIDE;
-   vr.request_flat    = !vr_user_enable;
-   vr.reference_space = RETRO_VR_REFERENCE_SPACE_LOCAL; /* eye height == player_pos.y */
+   struct retro_video_views views;
+   struct retro_video_view v[2];
+   unsigned ew = vr_eye_width  ? vr_eye_width  : 1024;
+   unsigned eh = vr_eye_height ? vr_eye_height : 1024;
 
-   if (!environ_cb(RETRO_ENVIRONMENT_SET_VR_CONTENT_INFO, &vr))
+   memset(&views, 0, sizeof(views));
+   memset(v, 0, sizeof(v));
+   v[0].width  = ew;
+   v[0].height = eh;
+   v[0].eye    = RETRO_VIDEO_VIEW_EYE_LEFT;
+   v[1].x      = ew;
+   v[1].width  = ew;
+   v[1].height = eh;
+   v[1].eye    = RETRO_VIDEO_VIEW_EYE_RIGHT;
+   views.views           = v;
+   views.num_views       = 2;
+   views.flags           = vr_user_enable ? 0 : RETRO_VIDEO_VIEWS_FLAG_REQUEST_FLAT;
+   views.reference_space = RETRO_VR_REFERENCE_SPACE_LOCAL; /* eye height == player_pos.y */
+   views.ipd_hint_m      = 0.0f;
+
+   if (!environ_cb(RETRO_ENVIRONMENT_SET_VIDEO_VIEWS, &views))
    {
       if (log_cb)
          log_cb(RETRO_LOG_INFO, "VR session request failed.\n");
       return false; /* old frontend, no headset, or VR disabled -> flat */
    }
 
-   vr_eye_width  = vr.recommended_eye_width  ? vr.recommended_eye_width  : 1024;
-   vr_eye_height = vr.recommended_eye_height ? vr.recommended_eye_height : 1024;
+   vr_eye_width  = views.recommended_view_width  ? views.recommended_view_width  : ew;
+   vr_eye_height = views.recommended_view_height ? views.recommended_view_height : eh;
 
    if (log_cb)
       log_cb(RETRO_LOG_INFO, "VR session request success. vr_eye_width: %d vr_eye_height: %d.\n", vr_eye_width, vr_eye_height);
