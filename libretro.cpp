@@ -454,9 +454,7 @@ static bool vr_request_session(void)
    v[1].eye    = RETRO_VIDEO_VIEW_EYE_RIGHT;
    views.views           = v;
    views.num_views       = 2;
-   views.flags           = vr_user_enable ? 0 : RETRO_VIDEO_VIEWS_FLAG_REQUEST_FLAT;
    views.reference_space = RETRO_VR_REFERENCE_SPACE_LOCAL; /* eye height == player_pos.y */
-   views.ipd_hint_m      = 0.0f;
 
    if (!environ_cb(RETRO_ENVIRONMENT_SET_VIDEO_VIEWS, &views))
    {
