@@ -66,7 +66,6 @@ unsigned mode_engine = MODE_MODELVIEWER;
 static bool scene_flip_y(void) { return !hw_render.bottom_left_origin; }
 
 static struct retro_vr_frame_state vr_frame;
-bool modelviewer_vr_capable(void) { return mode_engine == MODE_SCENEWALKER; }
 
 static float player_view_deg_x;
 static float player_view_deg_y;
@@ -823,12 +822,14 @@ static void modelviewer_run(void)
 {
    unsigned i, width, height;
    const bool scene = (mode_engine == MODE_SCENEWALKER);
-   bool vr = false;
+   bool dupe        = false;
+   bool vr          = vr_update(&vr_frame, scene, &dupe); /* before input */
 
-   if (scene && vr_active)
+   if (dupe)
    {
-      vr_poll_frame(&vr_frame); /* once, before input, per the API doc */
-      vr = vr_active;           /* may drop if the resize renegotiation failed */
+      input_poll_cb();
+      video_cb(NULL, vr_eye_width * 2, vr_eye_height, 0);
+      return;
    }
 
    vec3 look_dir = modelviewer_check_input();

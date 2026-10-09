@@ -70,4 +70,45 @@ static inline glm::vec3 vr_head_forward_xz(const struct retro_vr_frame_state &fs
    return glm::normalize(f);
 }
 
+/* How long a lost headset is waited for before going flat. A video reinit
+ * restarts the headset session, and leaving VR changes the geometry, which
+ * reinits again. */
+#define VR_HOLD_SECONDS 5
+
+struct vr_hold
+{
+   bool     active;
+   unsigned missing;   /* frames without HMD while active */
+};
+
+enum vr_hold_step
+{
+   VR_HOLD_FLAT = 0,
+   VR_HOLD_ENTER,
+   VR_HOLD_TRACK,
+   VR_HOLD_WAIT,       /* active, HMD missing: repeat the last frame */
+   VR_HOLD_LEAVE
+};
+
+static inline enum vr_hold_step vr_hold_update(struct vr_hold *h,
+      bool want, bool hmd, unsigned limit)
+{
+   if (!h->active)
+   {
+      if (!want || !hmd)
+         return VR_HOLD_FLAT;
+      h->active  = true;
+      h->missing = 0;
+      return VR_HOLD_ENTER;
+   }
+   if (!want || (!hmd && ++h->missing >= limit))
+   {
+      h->active = false;
+      return VR_HOLD_LEAVE;
+   }
+   if (hmd)
+      h->missing = 0;
+   return hmd ? VR_HOLD_TRACK : VR_HOLD_WAIT;
+}
+
 #endif

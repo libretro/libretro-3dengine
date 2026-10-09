@@ -70,7 +70,6 @@ extern const engine_program_t engine_program_modelviewer;
 extern bool vr_active;
 extern unsigned vr_eye_width;
 extern unsigned vr_eye_height;
-extern bool modelviewer_vr_capable(void);
-extern bool vr_poll_frame(struct retro_vr_frame_state *fs);
+extern bool vr_update(struct retro_vr_frame_state *fs, bool capable, bool *dupe);
 
 #endif

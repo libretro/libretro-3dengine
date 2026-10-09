@@ -436,12 +436,14 @@ static void location_deinitialized(void)
 }
 
 // VAR
-static bool vr_request_session(void)
+static struct vr_hold vr_hold_state;
+static bool vr_status_unsupported;
+static bool vr_refused; /* not retried until HMD or the option drops */
+
+static bool vr_send_map(unsigned ew, unsigned eh, unsigned *rec_w, unsigned *rec_h)
 {
    struct retro_video_views views;
    struct retro_video_view v[2];
-   unsigned ew = vr_eye_width  ? vr_eye_width  : 1024;
-   unsigned eh = vr_eye_height ? vr_eye_height : 1024;
 
    memset(&views, 0, sizeof(views));
    memset(v, 0, sizeof(v));
@@ -454,17 +456,42 @@ static bool vr_request_session(void)
    v[1].eye    = RETRO_VIDEO_VIEW_EYE_RIGHT;
    views.views           = v;
    views.num_views       = 2;
+   views.flags           = RETRO_VIDEO_VIEWS_FLAG_TRACKED;
    views.reference_space = RETRO_VR_REFERENCE_SPACE_LOCAL; /* eye height == player_pos.y */
 
    if (!environ_cb(RETRO_ENVIRONMENT_SET_VIDEO_VIEWS, &views))
+      return false;
+
+   *rec_w = views.recommended_view_width;
+   *rec_h = views.recommended_view_height;
+   return true;
+}
+
+/* Only a sent map returns the recommended eye size, so the last size is
+ * sent first and corrected. */
+static bool vr_request_session(void)
+{
+   unsigned ew = vr_eye_width  ? vr_eye_width  : 1024;
+   unsigned eh = vr_eye_height ? vr_eye_height : 1024;
+   unsigned rw = 0, rh = 0;
+
+   if (!vr_send_map(ew, eh, &rw, &rh))
    {
       if (log_cb)
          log_cb(RETRO_LOG_INFO, "VR session request failed.\n");
-      return false; /* old frontend, no headset, or VR disabled -> flat */
+      return false;
    }
 
-   vr_eye_width  = views.recommended_view_width  ? views.recommended_view_width  : ew;
-   vr_eye_height = views.recommended_view_height ? views.recommended_view_height : eh;
+   if (rw && rh && (rw != ew || rh != eh))
+   {
+      ew = rw;
+      eh = rh;
+      if (!vr_send_map(ew, eh, &rw, &rh))
+         return false;
+   }
+
+   vr_eye_width  = ew;
+   vr_eye_height = eh;
 
    if (log_cb)
       log_cb(RETRO_LOG_INFO, "VR session request success. vr_eye_width: %d vr_eye_height: %d.\n", vr_eye_width, vr_eye_height);
@@ -472,23 +499,96 @@ static bool vr_request_session(void)
    return true;
 }
 
-bool vr_poll_frame(struct retro_vr_frame_state *fs)
+static void vr_clear_map(void)
+{
+   struct retro_video_views views;
+
+   memset(&views, 0, sizeof(views));
+   environ_cb(RETRO_ENVIRONMENT_SET_VIDEO_VIEWS, &views);
+}
+
+static void vr_send_av_info(void)
+{
+   struct retro_system_av_info av;
+
+   memset(&av, 0, sizeof(av));
+   retro_get_system_av_info(&av);
+   environ_cb(RETRO_ENVIRONMENT_SET_SYSTEM_AV_INFO, &av);
+}
+
+/* True when a resize sent the map and the AV info again. */
+static bool vr_poll_frame(struct retro_vr_frame_state *fs)
 {
    struct retro_vr_frame_state tmp = *fs;
    if (!environ_cb(RETRO_ENVIRONMENT_GET_VR_FRAME_STATE, &tmp))
       return false; /* keep last pose */
    *fs = tmp;
 
-   if (tmp.flags & RETRO_VR_FRAME_TARGET_RESIZED)
+   if (!(tmp.flags & RETRO_VR_FRAME_TARGET_RESIZED) || !vr_request_session())
+      return false;
+   vr_send_av_info();
+   return true;
+}
+
+/* Once per frame, before input. A core learns about a headset only from
+ * HMD; *dupe asks for the last frame again while a lost one is waited for. */
+bool vr_update(struct retro_vr_frame_state *fs, bool capable, bool *dupe)
+{
+   unsigned status = 0;
+   bool hmd;
+
+   *dupe = false;
+   /* Asked once on a frontend without the call: it logs every refusal. */
+   if (     !vr_status_unsupported
+         && !environ_cb(RETRO_ENVIRONMENT_GET_VIDEO_VIEWS_STATUS, &status))
    {
-      if (vr_request_session())
-      {
-         struct retro_system_av_info av;
-         retro_get_system_av_info(&av);
-         environ_cb(RETRO_ENVIRONMENT_SET_SYSTEM_AV_INFO, &av);
-      }
-      else
+      vr_status_unsupported = true;
+      status                = 0;
+   }
+   hmd = (status & RETRO_VIDEO_VIEWS_STATUS_HMD) != 0;
+   if (!hmd || !vr_user_enable)
+      vr_refused = false;
+
+   switch (vr_hold_update(&vr_hold_state,
+            vr_user_enable && capable && !vr_refused, hmd,
+            (unsigned)(FPS * VR_HOLD_SECONDS)))
+   {
+      case VR_HOLD_ENTER:
+         if (!vr_request_session())
+         {
+            vr_clear_map(); /* a first map may have been accepted */
+            vr_hold_state.active = false;
+            vr_refused           = true;
+            return false;
+         }
+         vr_active = true;
+         /* Pose first: the AV info reinits video, which restarts the session. */
+         if (!vr_poll_frame(fs))
+            vr_send_av_info();
+         return true;
+      case VR_HOLD_TRACK:
+         break;
+      case VR_HOLD_WAIT:
+         *dupe = true;
+         return true;
+      case VR_HOLD_LEAVE:
          vr_active = false;
+         vr_clear_map();
+         vr_send_av_info();
+         return false;
+      default:
+         return false;
+   }
+
+   /* The map every frame: resending covers state loads and run-ahead. A
+    * new size written back is a resize. */
+   if (!vr_poll_frame(fs))
+   {
+      unsigned rw = 0, rh = 0;
+      if (     vr_send_map(vr_eye_width, vr_eye_height, &rw, &rh)
+            && rw && rh && (rw != vr_eye_width || rh != vr_eye_height)
+            && vr_request_session())
+         vr_send_av_info();
    }
    return true;
 }
@@ -712,9 +812,9 @@ bool retro_load_game(const struct retro_game_info *info)
       engine_program_cb->load_game(info);
 
    vr_active = false;
-   if (vr_user_enable && engine_program_cb == &engine_program_modelviewer &&
-         modelviewer_vr_capable())
-      vr_active = vr_request_session();
+   memset(&vr_hold_state, 0, sizeof(vr_hold_state));
+   vr_status_unsupported = false;
+   vr_refused            = false;
 
    return true;
 }
@@ -726,6 +826,9 @@ void retro_unload_game(void)
    if (convert_buffer)
       delete[] convert_buffer;
    convert_buffer = NULL;
+   if (vr_hold_state.active)
+      vr_clear_map();
+   memset(&vr_hold_state, 0, sizeof(vr_hold_state));
    vr_active = false;
    /* Vulkan resources are released in context_destroy(), while the device
     * is still alive; nothing to do for them here. */
